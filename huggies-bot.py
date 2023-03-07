@@ -6,7 +6,7 @@ from PIL import Image
 
 openai.api_key = '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'
 
-embeddings = pd.read_csv("D:/resume/internship/Kimberly/code/embeddings.csv")
+embeddings = pd.read_csv("embeddings.csv")
 embeddings = embeddings.drop(embeddings.columns[0], axis=1)
 
 def get_embedding(text):
@@ -118,7 +118,7 @@ button[title="View fullscreen"]{
 """,
     unsafe_allow_html=True,
 )
-image = Image.open('D:/resume/internship/Kimberly/code/logo.png')
+image = Image.open('logo.png')
 st.image(image, width=400)
 
 st.sidebar.info('Please choose the model from the dropdown below. The OpenAI API is powered by a diverse set of models with different capabilities. More info here - https://platform.openai.com/docs/models/overview')
