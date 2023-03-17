@@ -4,8 +4,17 @@ import numpy as np
 import openai
 from PIL import Image
 
-openai.api_key = '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'
+image = Image.open('fotor_2023-3-9_15_18_29.png')
+st.image(image, width = 180)
+st.title("Baby Bot")
 
+st.markdown("""---""")
+
+
+
+openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+#loading the dataset to pull context from
 embeddings = pd.read_csv("embeddings.csv")
 embeddings = embeddings.drop(embeddings.columns[0], axis=1)
 
@@ -15,15 +24,6 @@ def get_embedding(text):
       input=text
     )
     return result["data"][0]["embedding"]
-def compute_doc_embeddings(df):
-    """
-    Create an embedding for each row in the dataframe using the OpenAI Embeddings API.
-    
-    Return a dictionary that maps between each embedding vector and the index of the row that it corresponds to.
-    """
-    return {
-        idx: get_embedding(r.query) for idx, r in df.iterrows()
-    }
 def vector_similarity(x, y):
     """
     Returns the similarity between two vectors.
@@ -44,21 +44,41 @@ def calc_sim(query, contexts):
         sim_score.append((contexts.iloc[i][1],vector_similarity(query_embedding,contexts.iloc[i][2:])))
     sim_score.sort(key=lambda x: x[1], reverse=True)
     return sim_score
+def handle_input(
+               input_str : str,
+    conversation_history : str,
+    model : str
+                 ):
+    """Updates the conversation history and generates a response using one of the models below."""
+    # Generate a response using GPT-3
+    if(model == 'Customized GPT3'):
+        message = davinciC(input_str, conversation_history)
+    elif(model == 'Default GPT3'):
+        message = davinciNC(input_str,conversation_history)
+    elif(model == 'Customized ChatGPT (Experimental)'):
+        message = turbo(input_str, conversation_history)
 
-
+    # Update the conversation history
+    phrase = f"Q: {input_str}\nA:{message}\n"
+    file = open("convo.txt","a")
+    file.write(phrase)
+    file.close()
+    
+    return message
 #models
-def davinciC(query):    
+def davinciC(query, conversation_history):    
     #query = How to feed my baby in the first year
-    ss = calc_sim(query, embeddings)
-    context = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
+    if(st.session_state['count'] == 0):
+        ss = calc_sim(query, embeddings)
+        st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
+        print(st.session_state['context'])
     prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context
 
-    Context:
-    {context}
-
-    Q: {query}
-    A:"""
-
+Context:
+{st.session_state['context']}
+{conversation_history}
+Q:{query}
+A:"""
     base_model = "text-davinci-003"
     completion = openai.Completion.create(
         model = base_model,
@@ -68,20 +88,24 @@ def davinciC(query):
         temperature = 0,
     )
     return(completion.choices[0].text)
-def davinciNC(query):     
+def davinciNC(query, conversation_history):     
+    conversation_history += query
+    print(conversation_history)
     base_model = "text-davinci-003"
     completion = openai.Completion.create(
         model = base_model,
-        prompt = query,
+        prompt = conversation_history,
         max_tokens = 1024,
         n = 1,
         temperature = 0,
     )
     return(completion.choices[0].text)
-def turbo(query):
+def turbo(query, conversation_history):
     #query = "How to feed my baby in the first year"
-    ss = calc_sim(query, embeddings)
-    context = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
+    if(st.session_state['count'] == 0):
+        ss = calc_sim(query, embeddings)
+        st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
+    context = st.session_state['context']+"\n"+conversation_history
     base_model = "gpt-3.5-turbo"
     completion = openai.ChatCompletion.create(
         model = base_model,
@@ -95,52 +119,60 @@ def turbo(query):
         temperature = 0,
     )
     return(completion['choices'][0]['message']['content'])
-
-
+#init conversation history
+f = open("convo.txt","a")
+f.write("")
+f.close()
+conversation_history = ''''''
+if 'count' not in st.session_state:
+    st.session_state['count'] = 0
 
 #UI
 st.markdown(
     """
 <style>
-button[title="View fullscreen"]{
-    visibility: hidden;}
-.css-1v0mbdj {
-    position: fixed;
-    top: -15px;
-    left: 30px;
-    z-index: 200;
+.css-fblp2m {
+    fill: rgb(255 255 255);
+}
+.css-18ni7ap {
+    background: #0f059e;
 }
 .css-1avcm0n {
-    background: rgb(251 0 0);
-    z-index: 100;
+    background: #0f059e;
 }
 </style>
 """,
     unsafe_allow_html=True,
 )
-image = Image.open('logo.png')
-st.image(image, width=400)
+#image = Image.open('logo.png')
+#st.image(image, width=400)
 
-st.sidebar.info('Please choose the model from the dropdown below. The OpenAI API is powered by a diverse set of models with different capabilities. More info here - https://platform.openai.com/docs/models/overview')
+st.sidebar.info('Please choose the model from the dropdown below.')
 st.set_option('deprecation.showfileUploaderEncoding', False)
-add_selectbox = st.sidebar.selectbox("Which model would you like to use?", ("gpt-3.5-turbo", "text-davinci-003", "no context - davinci"))
-st.title("Newborn & Infants Bot")
-st.header('On the day you bring your newborn baby home, life as you know it changes forever. Huggies has put all their tips, techniques and information in one place, to help make newborn baby care as easy as possible for new parents')
-if add_selectbox == "gpt-3.5-turbo":
-    text1 = st.text_area('Enter your query:')
-    output = ""
-    if st.button("Ask Huggies Bot"):
-        output = turbo(text1)
-        st.success(output)
-elif add_selectbox == "text-davinci-003":
-    text1 = st.text_area('Enter your query:')
-    output = ""
-    if st.button("Ask Huggies Bot"):
-        output = davinciC(text1)
-        st.success(output)
-elif add_selectbox == "no context - davinci":
-    text1 = st.text_area('Enter your query:')
-    output = ""
-    if st.button("Ask Huggies Bot"):
-        output = davinciNC(text1)
-        st.success(output)
+#add_selectbox = st.sidebar.selectbox("Which model would you like to use?", ("gpt-3.5-turbo", "text-davinci-003", "no context - davinci"))
+add_selectbox = st.sidebar.selectbox("", ("Customized GPT3", "Default GPT3","Customized ChatGPT (Experimental)"))
+
+ 
+for count in range(25):
+    st.sidebar.markdown("\n")
+st.sidebar.markdown("""---""")
+  
+st.sidebar.caption('Note: Some models have been trained with select public content from www.huggies.com')
+st.sidebar.caption("Please reach out to robin.john@kcc.com for any queries", unsafe_allow_html=False)
+
+st.write('On the day you bring your newborn baby home, life as you know it changes forever. We have put all tips, techniques and information in one place, to help make newborn baby care as easy as possible for new parents')
+
+text1 = st.text_area('Enter your query:')
+output = ""
+if st.button("Ask The Bot"):
+    file = open("convo.txt","r")
+    conversation_history = file.read()
+    file.close()
+    output = handle_input(text1,conversation_history,add_selectbox)
+    st.success(output)
+    st.session_state['count'] += 1
+if st.button("Clear context"):
+    st.session_state['count'] = 0
+    file = open("convo.txt","w")
+    file.write("")
+    file.close()
