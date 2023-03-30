@@ -74,7 +74,7 @@ def davinciC(query, conversation_history):
         ss = calc_sim(query, embeddings)
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
         print(st.session_state['context'])
-        if ss[0][1] > 0.9:
+        if ss[0][1] > 0.85:
             link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
     prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context {link}
 
