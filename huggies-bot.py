@@ -1,3 +1,4 @@
+#version: babybot+convo_hist+links
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -15,7 +16,7 @@ st.markdown("""---""")
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 #loading the dataset to pull context from
-embeddings = pd.read_csv("embeddings.csv")
+embeddings = pd.read_csv("embeddings_wl.csv")
 embeddings = embeddings.drop(embeddings.columns[0], axis=1)
 
 def get_embedding(text):
@@ -41,7 +42,7 @@ def calc_sim(query, contexts):
     query_embedding = get_embedding(query)
     sim_score = []
     for i in range(len(contexts.iloc[0:])):
-        sim_score.append((contexts.iloc[i][1],vector_similarity(query_embedding,contexts.iloc[i][2:])))
+        sim_score.append((contexts.iloc[i][2],vector_similarity(query_embedding,contexts.iloc[i][3:])))
     sim_score.sort(key=lambda x: x[1], reverse=True)
     return sim_score
 def handle_input(
@@ -72,7 +73,11 @@ def davinciC(query, conversation_history):
         ss = calc_sim(query, embeddings)
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
         print(st.session_state['context'])
-    prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context
+        if ss[0][1] > 0.9:
+            link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
+        else:
+            link = ''
+    prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context {link}
 
 Context:
 {st.session_state['context']}
@@ -90,7 +95,6 @@ A:"""
     return(completion.choices[0].text)
 def davinciNC(query, conversation_history):     
     conversation_history += query
-    print(conversation_history)
     base_model = "text-davinci-003"
     completion = openai.Completion.create(
         model = base_model,
