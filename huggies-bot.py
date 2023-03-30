@@ -69,14 +69,13 @@ def handle_input(
 #models
 def davinciC(query, conversation_history):    
     #query = How to feed my baby in the first year
+    link = ''
     if(st.session_state['count'] == 0):
         ss = calc_sim(query, embeddings)
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
         print(st.session_state['context'])
         if ss[0][1] > 0.9:
             link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
-        else:
-            link = ''
     prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context {link}
 
 Context:
