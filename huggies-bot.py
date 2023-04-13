@@ -1,4 +1,6 @@
-#version: babybot+convo_hist+links
+#version: babybot+convo_hist+links+product_links
+from bs4 import BeautifulSoup
+import requests
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -122,6 +124,35 @@ def turbo(query, conversation_history):
         temperature = 0,
     )
     return(completion['choices'][0]['message']['content'])
+
+def grab_product(resp):
+    query = "List out potential products from the paragraph below-\n"+resp
+    output = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a bot that tries to identify products from a paragraph."},
+            {"role": "user", "content": query}
+        ]
+    )
+    model_output = output['choices'][0]['message']['content']
+    search = (model_output.split('\n')[0])[3:] + "product link buy"
+    url = 'https://www.google.com/search'
+
+    headers = {
+	    'Accept' : '*/*',
+	    'Accept-Language': 'en-US,en;q=0.5',
+	    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82',
+    }
+    parameters = {'q': search}
+
+    content = requests.get(url, headers = headers, params = parameters).text
+    soup = BeautifulSoup(content, 'html.parser')
+
+    search = soup.find(id = 'search')
+    first_link = search.find('a')
+
+    return(first_link['href'])
+
 #init conversation history
 f = open("convo.txt","a")
 f.write("")
@@ -172,6 +203,8 @@ if st.button("Ask The Bot"):
     conversation_history = file.read()
     file.close()
     output = handle_input(text1,conversation_history,add_selectbox)
+    product = grab_product(output)
+    output += "\nHere's a link to our product:" + product
     st.success(output)
     st.session_state['count'] += 1
 if st.button("Clear context"):
