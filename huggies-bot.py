@@ -135,7 +135,7 @@ def grab_product(resp):
         ]
     )
     model_output = output['choices'][0]['message']['content']
-    search = (model_output.split('\n')[0])[3:] + "product link buy"
+    search = (model_output.split('\n')[0])[3:] + "huggies kimberly clark product link buy"
     url = 'https://www.google.com/search'
 
     headers = {
@@ -204,7 +204,7 @@ if st.button("Ask The Bot"):
     file.close()
     output = handle_input(text1,conversation_history,add_selectbox)
     product = grab_product(output)
-    output += "\nHere's a link to our product:" + product
+    output += "\n" + "Here's a link to our product:" + product
     st.success(output)
     st.session_state['count'] += 1
 if st.button("Clear context"):
