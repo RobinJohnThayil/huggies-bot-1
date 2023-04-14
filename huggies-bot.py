@@ -15,8 +15,7 @@ st.markdown("""---""")
 
 
 
-#openai.api_key = st.secrets["OPENAI_API_KEY"]
-openai.api_key = "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"
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 #loading the dataset to pull context from
 embeddings = pd.read_csv("embeddings_wl.csv")
