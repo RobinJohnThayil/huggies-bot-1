@@ -1,0 +1,12 @@
+Q: Who is the CEO of microsoft?
+A: The CEO of Microsoft is Satya Nadella.
+Q: Who is the CEO of microsoft?
+A: Satya Nadella is the CEO of Microsoft.
+Q: Who is the CEO of microsoft?
+A:
+
+The CEO of Microsoft is Satya Nadella.
+Q: Who is the CEO of microsoft?
+A:
+
+Satya Nadella is the CEO of Microsoft.

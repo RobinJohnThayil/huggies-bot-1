@@ -15,7 +15,8 @@ st.markdown("""---""")
 
 
 
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+#openai.api_key = st.secrets["OPENAI_API_KEY"]
+openai.api_key = "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"
 
 #loading the dataset to pull context from
 embeddings = pd.read_csv("embeddings_wl.csv")
@@ -54,8 +55,9 @@ def handle_input(
                  ):
     """Updates the conversation history and generates a response using one of the models below."""
     # Generate a response using GPT-3
+    product = None
     if(model == 'Customized GPT3'):
-        message = davinciC(input_str, conversation_history)
+        message,product = davinciC(input_str, conversation_history)
     elif(model == 'Default GPT3'):
         message = davinciNC(input_str,conversation_history)
     elif(model == 'Customized ChatGPT (Experimental)'):
@@ -67,17 +69,19 @@ def handle_input(
     file.write(phrase)
     file.close()
     
-    return message
+    return message,product
 #models
 def davinciC(query, conversation_history):    
     #query = How to feed my baby in the first year
     link = ''
+    product = None
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
         print(st.session_state['context'])
     if ss[0][1] > 0.85:
         link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
+        product = grab_product(query)
     prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context {link}
 
 Context:
@@ -93,7 +97,7 @@ A:"""
         n = 1,
         temperature = 0,
     )
-    return(completion.choices[0].text)
+    return(completion.choices[0].text,product)
 def davinciNC(query, conversation_history):     
     conversation_history += query
     base_model = "text-davinci-003"
@@ -202,9 +206,10 @@ if st.button("Ask The Bot"):
     file = open("convo.txt","r")
     conversation_history = file.read()
     file.close()
-    output = handle_input(text1,conversation_history,add_selectbox)
-    product = grab_product(output)
-    output += "\n" + "Here's a link to our product:" + product
+    output,product = handle_input(text1,conversation_history,add_selectbox)
+    #product = grab_product(output)
+    if product != None:
+        output += "\n" + "Here's a link to our product:" + product
     st.success(output)
     st.session_state['count'] += 1
 if st.button("Clear context"):
