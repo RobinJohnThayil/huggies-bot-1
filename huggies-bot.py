@@ -129,7 +129,8 @@ def turbo(query, conversation_history):
     return(completion['choices'][0]['message']['content'])
 
 def grab_product(resp):
-    query = "List out potential products from the paragraph below-\n"+resp
+    #query = "List out potential products from the paragraph below-\n"+resp
+    query = "Identify healthcare products from the paragraph below - \n\n"+resp
     output = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
