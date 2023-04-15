@@ -138,7 +138,7 @@ def grab_product(resp):
         ]
     )
     model_output = output['choices'][0]['message']['content']
-    search = (model_output.split('\n')[0])[3:] + "huggies kimberly clark product link buy"
+    search = (model_output.split('\n')[0])[3:] + "huggies product link buy"
     url = 'https://www.google.com/search'
 
     headers = {
