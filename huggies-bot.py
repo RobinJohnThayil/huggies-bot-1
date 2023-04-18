@@ -5,6 +5,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import openai
+import re
 from PIL import Image
 
 image = Image.open('fotor_2023-3-9_15_18_29.png')
