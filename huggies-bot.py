@@ -78,7 +78,7 @@ def davinciC(query, conversation_history):
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-        print(st.session_state['context'])
+        #print(st.session_state['context'])
     if ss[0][1] > 0.85:
         link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
         product = grab_product(query)
@@ -142,7 +142,8 @@ def grab_product(resp):
     )
     model_output = output['choices'][0]['message']['content']
     model_output = re.sub(r'[^\w\s\n]+', '', model_output)
-    search = model_output + "huggies product link buy"
+    search = model_output + " huggies product link buy"
+    print("search term:",search)
     url = 'https://www.google.com/search'
 
     headers = {
@@ -157,7 +158,8 @@ def grab_product(resp):
 
     link = search.find_all('a')
     amazon_links = re.findall(r'https://www\.amazon\.com\S*(?=\")', str(link))
-
+    for i in amazon_links:
+	print(i)
     return(amazon_links)
 
 #init conversation history
