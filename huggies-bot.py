@@ -130,16 +130,18 @@ def turbo(query, conversation_history):
 
 def grab_product(resp):
     #query = "List out potential products from the paragraph below-\n"+resp
-    query = "Identify healthcare products from the paragraph below - \n\n"+resp
+    query = "List baby and care products from the paragraph below, If there are none say \"IDK\"-\n"+resp
     output = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "You are a bot that tries to identify products from a paragraph."},
-            {"role": "user", "content": query}
+            {"role": "user", "content": query},
+            {"role": "assistant", "content": "Only respond with the product"}
         ]
     )
     model_output = output['choices'][0]['message']['content']
-    search = (model_output.split('\n')[0])[3:] + "huggies product link buy"
+    model_output = re.sub(r'[^\w\s\n]+', '', model_output)
+    search = model_output + "huggies product link buy"
     url = 'https://www.google.com/search'
 
     headers = {
@@ -152,10 +154,10 @@ def grab_product(resp):
     content = requests.get(url, headers = headers, params = parameters).text
     soup = BeautifulSoup(content, 'html.parser')
 
-    search = soup.find(id = 'search')
-    first_link = search.find('a')
+    link = search.find_all('a')
+    amazon_links = re.findall(r'https://www\.amazon\.com\S*(?=\")', str(link))
 
-    return(first_link['href'])
+    return(amazon_links)
 
 #init conversation history
 f = open("convo.txt","a")
@@ -209,7 +211,9 @@ if st.button("Ask The Bot"):
     output,product = handle_input(text1,conversation_history,add_selectbox)
     #product = grab_product(output)
     if product != None:
-        output += "\n" + "Here's a link to our product:" + product
+        output += "\n" + "Here's a link to our products:" + product
+	for i in product:
+            output += i + "\n"
     st.success(output)
     st.session_state['count'] += 1
 if st.button("Clear context"):
