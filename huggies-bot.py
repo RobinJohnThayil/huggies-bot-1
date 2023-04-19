@@ -81,7 +81,6 @@ def davinciC(query, conversation_history):
         #print(st.session_state['context'])
     if ss[0][1] > 0.85:
         link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
-        product = grab_product(query)
     prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context {link}
 
 Context:
@@ -97,6 +96,8 @@ A:"""
         n = 1,
         temperature = 0,
     )
+    if ss[0][1] > 0.70:
+        product = grab_product(completion.choices[0].text)
     return(completion.choices[0].text,product)
 def davinciNC(query, conversation_history):     
     conversation_history += query
@@ -131,17 +132,21 @@ def turbo(query, conversation_history):
 
 def grab_product(resp):
     #query = "List out potential products from the paragraph below-\n"+resp
-    query = "List baby and care products from the paragraph below, If there are none say \"IDK\"-\n"+resp
+    query = "List potential huggies products from the paragraph below, If there are none say \"IDK\"-\n"+resp
+    print(query)
     output = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "You are a bot that tries to identify products from a paragraph."},
             {"role": "user", "content": query},
             {"role": "assistant", "content": "Only respond with the product"}
-        ]
+        ],
+        temperature = 1.5
     )
     model_output = output['choices'][0]['message']['content']
     model_output = re.sub(r'[^\w\s\n]+', '', model_output)
+    if model_output == "IDK":
+        return None
     search = model_output + " huggies product link buy"
     print("search term:",search)
     url = 'https://www.google.com/search'
@@ -155,13 +160,12 @@ def grab_product(resp):
 
     content = requests.get(url, headers = headers, params = parameters).text
     soup = BeautifulSoup(content, 'html.parser')
-
-    link = search.find_all('a')
-    amazon_links = re.findall(r'https://www\.amazon\.com\S*(?=\")', str(link))
-    for i in amazon_links:
-	print(i)
+    search = soup.find(id = 'search')
+    links = []
+    for link in search.findAll('a'):
+        links.append(link.get('href'))
+    amazon_links = re.findall(r'https://www\.amazon\.\S*(?=\')', str(links))
     return(amazon_links)
-
 #init conversation history
 f = open("convo.txt","a")
 f.write("")
@@ -214,8 +218,8 @@ if st.button("Ask The Bot"):
     output,product = handle_input(text1,conversation_history,add_selectbox)
     #product = grab_product(output)
     if product != None:
-        output += "\n" + "Here's a link to our products:" + product
-	for i in product:
+        output += "\n" + "Here's a link to our product(s):"
+        for i in product:
             output += i + "\n"
     st.success(output)
     st.session_state['count'] += 1
