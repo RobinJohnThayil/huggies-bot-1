@@ -231,9 +231,9 @@ if st.button("Ask The Bot"):
     else:
         #product = grab_product(output)
         if product != None:
-            output += "\n" + "Here's a link to our product:\n" + product[0]
-            #for i in product:
-            #    output += i + "\n"
+            output += "\n" + "Here's a link to our product:\n"
+            for i in product:
+                output += i + "\n"
         st.success(output)
     st.session_state['count'] += 1
 if st.button("Clear context"):
