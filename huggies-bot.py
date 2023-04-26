@@ -83,6 +83,10 @@ def davinciC(query, conversation_history):
     product = None
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
+        e_token_length = num_tokens_from_string(query, "p50k_base")
+        if(e_token_length > 7000):
+            limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
+            return(limit, None)
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
         #print(st.session_state['context'])
     if ss[0][1] > 0.85:
