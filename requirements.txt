@@ -3,4 +3,4 @@ pandas
 openai
 beautifulsoup4
 requests
-tikitoken
+tiktoken
