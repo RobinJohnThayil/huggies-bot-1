@@ -18,7 +18,6 @@ st.markdown("""---""")
 
 
 openai.api_key = st.secrets["OPENAI_API_KEY"]
-
 #loading the dataset to pull context from
 embeddings = pd.read_csv("embeddings_wl.csv")
 embeddings = embeddings.drop(embeddings.columns[0], axis=1)
@@ -70,10 +69,11 @@ def handle_input(
         message = turbo(input_str, conversation_history)
 
     # Update the conversation history
-    phrase = f"Q: {input_str}\nA:{message}\n"
-    file = open("convo.txt","a")
-    file.write(phrase)
-    file.close()
+    if(message != "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"):
+        phrase = f"Q: {input_str}\nA:{message}\n"
+        file = open("convo.txt","a")
+        file.write(phrase)
+        file.close()
     
     return message,product
 #models
@@ -81,12 +81,12 @@ def davinciC(query, conversation_history):
     #query = How to feed my baby in the first year
     link = ''
     product = None
+    e_token_length = num_tokens_from_string(query, "p50k_base")
+    if(e_token_length > 7000):
+        limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
+        return(limit, None)
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
-        e_token_length = num_tokens_from_string(query, "p50k_base")
-        if(e_token_length > 7000):
-            limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
-            return(limit, None)
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
         #print(st.session_state['context'])
     if ss[0][1] > 0.85:
@@ -187,7 +187,8 @@ f.close()
 conversation_history = ''''''
 if 'count' not in st.session_state:
     st.session_state['count'] = 0
-
+if 'context' not in st.session_state:
+    st.session_state['context'] = ""
 #UI
 st.markdown(
     """
