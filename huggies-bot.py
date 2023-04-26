@@ -7,6 +7,7 @@ import numpy as np
 import openai
 import re
 from PIL import Image
+import tiktoken
 
 image = Image.open('fotor_2023-3-9_15_18_29.png')
 st.image(image, width = 180)
@@ -48,6 +49,11 @@ def calc_sim(query, contexts):
         sim_score.append((contexts.iloc[i][2],vector_similarity(query_embedding,contexts.iloc[i][3:])))
     sim_score.sort(key=lambda x: x[1], reverse=True)
     return sim_score
+def num_tokens_from_string(string: str, encoding_name: str) -> int:
+    """Returns the number of tokens in a text string."""
+    encoding = tiktoken.get_encoding(encoding_name)
+    num_tokens = len(encoding.encode(string))
+    return num_tokens
 def handle_input(
                input_str : str,
     conversation_history : str,
@@ -88,6 +94,10 @@ Context:
 {conversation_history}
 Q:{query}
 A:"""
+    token_length = num_tokens_from_string(prompt, "p50k_base")
+    if(token_length > 4000):
+        limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
+        return(limit, None)
     base_model = "text-davinci-003"
     completion = openai.Completion.create(
         model = base_model,
@@ -216,12 +226,15 @@ if st.button("Ask The Bot"):
     conversation_history = file.read()
     file.close()
     output,product = handle_input(text1,conversation_history,add_selectbox)
-    #product = grab_product(output)
-    if product != None:
-        output += "\n" + "Here's a link to our product(s):"
-        for i in product:
-            output += i + "\n"
-    st.success(output)
+    if output == "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below":
+        st.warning(output)
+    else:
+        #product = grab_product(output)
+        if product != None:
+            output += "\n" + "Here's a link to our product(s):"
+            for i in product:
+                output += i + "\n"
+        st.success(output)
     st.session_state['count'] += 1
 if st.button("Clear context"):
     st.session_state['count'] = 0
