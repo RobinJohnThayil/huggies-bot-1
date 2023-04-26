@@ -1,9 +1,13 @@
-#version: babybot+convo_hist+links
+#version: babybot+convo_hist+links+product_links
+from bs4 import BeautifulSoup
+import requests
 import streamlit as st
 import pandas as pd
 import numpy as np
 import openai
+import re
 from PIL import Image
+import tiktoken
 
 image = Image.open('fotor_2023-3-9_15_18_29.png')
 st.image(image, width = 180)
@@ -45,6 +49,11 @@ def calc_sim(query, contexts):
         sim_score.append((contexts.iloc[i][2],vector_similarity(query_embedding,contexts.iloc[i][3:])))
     sim_score.sort(key=lambda x: x[1], reverse=True)
     return sim_score
+def num_tokens_from_string(string: str, encoding_name: str) -> int:
+    """Returns the number of tokens in a text string."""
+    encoding = tiktoken.get_encoding(encoding_name)
+    num_tokens = len(encoding.encode(string))
+    return num_tokens
 def handle_input(
                input_str : str,
     conversation_history : str,
@@ -52,8 +61,9 @@ def handle_input(
                  ):
     """Updates the conversation history and generates a response using one of the models below."""
     # Generate a response using GPT-3
+    product = None
     if(model == 'Customized GPT3'):
-        message = davinciC(input_str, conversation_history)
+        message,product = davinciC(input_str, conversation_history)
     elif(model == 'Default GPT3'):
         message = davinciNC(input_str,conversation_history)
     elif(model == 'Customized ChatGPT (Experimental)'):
@@ -65,15 +75,16 @@ def handle_input(
     file.write(phrase)
     file.close()
     
-    return message
+    return message,product
 #models
 def davinciC(query, conversation_history):    
     #query = How to feed my baby in the first year
     link = ''
+    product = None
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-        print(st.session_state['context'])
+        #print(st.session_state['context'])
     if ss[0][1] > 0.85:
         link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
     prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context {link}
@@ -83,6 +94,10 @@ Context:
 {conversation_history}
 Q:{query}
 A:"""
+    token_length = num_tokens_from_string(prompt, "p50k_base")
+    if(token_length > 4000):
+        limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
+        return(limit, None)
     base_model = "text-davinci-003"
     completion = openai.Completion.create(
         model = base_model,
@@ -91,7 +106,9 @@ A:"""
         n = 1,
         temperature = 0,
     )
-    return(completion.choices[0].text)
+    if ss[0][1] > 0.70:
+        product = grab_product(completion.choices[0].text)
+    return(completion.choices[0].text,product)
 def davinciNC(query, conversation_history):     
     conversation_history += query
     base_model = "text-davinci-003"
@@ -122,6 +139,43 @@ def turbo(query, conversation_history):
         temperature = 0,
     )
     return(completion['choices'][0]['message']['content'])
+
+def grab_product(resp):
+    #query = "List out potential products from the paragraph below-\n"+resp
+    query = "List potential huggies products from the paragraph below, If there are none say \"IDK\"-\n"+resp
+    print(query)
+    output = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a bot that tries to identify products from a paragraph."},
+            {"role": "user", "content": query},
+            {"role": "assistant", "content": "Only respond with the product"}
+        ],
+        temperature = 1.5
+    )
+    model_output = output['choices'][0]['message']['content']
+    model_output = re.sub(r'[^\w\s\n]+', '', model_output)
+    if model_output == "IDK":
+        return None
+    search = model_output + " huggies product link buy"
+    print("search term:",search)
+    url = 'https://www.google.com/search'
+
+    headers = {
+	    'Accept' : '*/*',
+	    'Accept-Language': 'en-US,en;q=0.5',
+	    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82',
+    }
+    parameters = {'q': search}
+
+    content = requests.get(url, headers = headers, params = parameters).text
+    soup = BeautifulSoup(content, 'html.parser')
+    search = soup.find(id = 'search')
+    links = []
+    for link in search.findAll('a'):
+        links.append(link.get('href'))
+    amazon_links = re.findall(r'https://www\.amazon\.\S*(?=\')', str(links))
+    return(amazon_links)
 #init conversation history
 f = open("convo.txt","a")
 f.write("")
@@ -171,8 +225,16 @@ if st.button("Ask The Bot"):
     file = open("convo.txt","r")
     conversation_history = file.read()
     file.close()
-    output = handle_input(text1,conversation_history,add_selectbox)
-    st.success(output)
+    output,product = handle_input(text1,conversation_history,add_selectbox)
+    if output == "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below":
+        st.warning(output)
+    else:
+        #product = grab_product(output)
+        if product != None:
+            output += "\n" + "Here's a link to our product:\n" + product[0]
+            #for i in product:
+            #    output += i + "\n"
+        st.success(output)
     st.session_state['count'] += 1
 if st.button("Clear context"):
     st.session_state['count'] = 0
