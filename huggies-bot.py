@@ -66,7 +66,7 @@ def handle_input(
     elif(model == 'Default GPT3'):
         message = davinciNC(input_str,conversation_history)
     elif(model == 'Customized ChatGPT (Experimental)'):
-        message = turbo(input_str, conversation_history)
+        message,product = turbo(input_str, conversation_history)
 
     # Update the conversation history
     if(message != "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"):
@@ -81,7 +81,7 @@ def davinciC(query, conversation_history):
     #query = How to feed my baby in the first year
     link = ''
     product = None
-    e_token_length = num_tokens_from_string(query, "p50k_base")
+    e_token_length = num_tokens_from_string(query, "cl100k_base")
     if(e_token_length > 7000):
         limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
         return(limit, None)
@@ -126,40 +126,52 @@ def davinciNC(query, conversation_history):
     return(completion.choices[0].text)
 def turbo(query, conversation_history):
     #query = "How to feed my baby in the first year"
-    if(st.session_state['count'] == 0):
-        ss = calc_sim(query, embeddings)
-        st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-    context = st.session_state['context']+"\n"+conversation_history
+    link = ''
+    product = None
+
+    token_length = num_tokens_from_string(query, "p50k_base")
+    if(token_length > 4000):
+        limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
+        return(limit, None)
+    st.session_state['messages'].append({"role": "user", "content": query})
+    ss = calc_sim(query, embeddings)
+    if(st.session_state['count'] == 0 and ss[0][1] > 0.85):
+        context = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
+        st.session_state['messages'].append({"role": "assistant", "content": context})
+    if ss[0][1] > 0.85:
+        link = "Click this link to get more information:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
+
     base_model = "gpt-3.5-turbo"
     completion = openai.ChatCompletion.create(
         model = base_model,
-        messages=[
-            {"role": "system", "content": "You are a chatbot that will provide answers with the help of the assistant."},
-            {"role": "user", "content": query},
-            {"role": "assistant", "content": context}
-        ],
+        messages = st.session_state['messages'],
         max_tokens = 1024,
         n = 1,
         temperature = 0,
     )
-    return(completion['choices'][0]['message']['content'])
+    response = completion['choices'][0]['message']['content']
+    st.session_state['messages'].append({"role": "assistant", "content": response})
+    if ss[0][1] > 0.85:
+        product = grab_product(response)
+    response += link
+    return(response, product)
 
 def grab_product(resp):
     #query = "List out potential products from the paragraph below-\n"+resp
-    query = "List potential huggies products from the paragraph below, If there are none say \"IDK\"-\n"+resp
-    print(query)
+    query = "List potential huggies products from the paragraph below,\n"+resp
     output = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "You are a bot that tries to identify products from a paragraph."},
             {"role": "user", "content": query},
-            {"role": "assistant", "content": "Only respond with the product"}
+            {"role": "assistant", "content": "Only respond with the product"},
+            {"role": "assistant", "content": "If there isn't a product respond by saying \"None\""}
         ],
         temperature = 1.5
     )
     model_output = output['choices'][0]['message']['content']
     model_output = re.sub(r'[^\w\s\n]+', '', model_output)
-    if model_output == "IDK":
+    if "None" in model_output:
         return None
     search = model_output + " huggies product link buy"
     print("search term:",search)
@@ -179,17 +191,30 @@ def grab_product(resp):
     for link in search.findAll('a'):
         links.append(link.get('href'))
     amazon_links = re.findall(r'https://www\.amazon\.\S*(?=\')', str(links))
-    return(amazon_links)
+    if(len(amazon_links) == 0):
+        return None
+    else:
+        return(amazon_links)
+
+
 #init conversation history
 f = open("convo.txt","a")
 f.write("")
 f.close()
 conversation_history = ''''''
+
+#"""SESSION VARIABLES"""
 if 'count' not in st.session_state:
     st.session_state['count'] = 0
 if 'context' not in st.session_state:
     st.session_state['context'] = ""
-#UI
+if 'messages' not in st.session_state:
+    st.session_state['messages'] = [
+        {"role": "system", "content": "You are a helpful chatbot."}
+    ]
+#"""END OF SESSION VARIABLES"""
+
+#"""UI"""
 st.markdown(
     """
 <style>
@@ -236,13 +261,14 @@ if st.button("Ask The Bot"):
     else:
         #product = grab_product(output)
         if product != None:
-            output += "\n" + "Here's a link to our product:\n" + product[0]
+            output += "\n" + "Here's a link to our relavant product:\n" + product[0]
             #for i in product:
             #    output += i + "\n"
         st.success(output)
     st.session_state['count'] += 1
 if st.button("Clear context"):
     st.session_state['count'] = 0
+    del st.session_state['messages']
     file = open("convo.txt","w")
     file.write("")
     file.close()
