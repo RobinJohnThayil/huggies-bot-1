@@ -55,29 +55,29 @@ def num_tokens_from_string(string: str, encoding_name: str) -> int:
     return num_tokens
 def handle_input(
                input_str : str,
-    conversation_history : str,
     model : str
                  ):
     """Updates the conversation history and generates a response using one of the models below."""
     # Generate a response using GPT-3
     product = None
     if(model == 'Customized GPT3'):
-        message,product = davinciC(input_str, conversation_history)
+        message,product = davinciC(input_str)
     elif(model == 'Default GPT3'):
-        message = davinciNC(input_str,conversation_history)
+        message = davinciNC(input_str)
     elif(model == 'Customized ChatGPT (Experimental)'):
-        message,product = turbo(input_str, conversation_history)
+        message,product = turbo(input_str)
 
     # Update the conversation history
     if(message != "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"):
         phrase = f"Q: {input_str}\nA:{message}\n"
-        file = open("convo.txt","a")
-        file.write(phrase)
-        file.close()
+        # file = open("convo.txt","a")
+        # file.write(phrase)
+        # file.close()
+        st.session_state['hist'] += phrase
     
     return message,product
 #models
-def davinciC(query, conversation_history):    
+def davinciC(query):    
     #query = How to feed my baby in the first year
     link = ''
     product = None
@@ -95,7 +95,7 @@ def davinciC(query, conversation_history):
 
 Context:
 {st.session_state['context']}
-{conversation_history}
+{st.session_state['hist']}
 Q:{query}
 A:"""
     token_length = num_tokens_from_string(prompt, "p50k_base")
@@ -113,34 +113,40 @@ A:"""
     if ss[0][1] > 0.70:
         product = grab_product(completion.choices[0].text)
     return(completion.choices[0].text,product)
-def davinciNC(query, conversation_history):     
-    conversation_history += query
+def davinciNC(query):
     base_model = "text-davinci-003"
     completion = openai.Completion.create(
         model = base_model,
-        prompt = conversation_history,
+        prompt = query,
         max_tokens = 1024,
         n = 1,
         temperature = 0,
     )
     return(completion.choices[0].text)
-def turbo(query, conversation_history):
+def turbo(query):
     #query = "How to feed my baby in the first year"
     link = ''
     product = None
-
+    txt = query
     token_length = num_tokens_from_string(query, "p50k_base")
-    if(token_length > 4000):
-        limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
-        return(limit, None)
+    
     st.session_state['messages'].append({"role": "user", "content": query})
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0 and ss[0][1] > 0.85):
-        context = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
+        context = "Please answer with the help of the following context if it is related to the question:\n"
+        context += embeddings[embeddings.values == ss[0][0]].iloc[0][0]
         st.session_state['messages'].append({"role": "assistant", "content": context})
     if ss[0][1] > 0.85:
         link = "Click this link to get more information:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
 
+    #TOKEN LIMIT
+    for i in st.session_state['messages']:
+        txt += i["content"]
+    prompt_length = num_tokens_from_string(txt, "p50k_base")
+    if(prompt_length > 4000):
+        limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
+        return(limit, None)
+    
     base_model = "gpt-3.5-turbo"
     completion = openai.ChatCompletion.create(
         model = base_model,
@@ -198,10 +204,10 @@ def grab_product(resp):
 
 
 #init conversation history
-f = open("convo.txt","a")
-f.write("")
-f.close()
-conversation_history = ''''''
+# f = open("convo.txt","a")
+# f.write("")
+# f.close()
+# conversation_history = ''''''
 
 #"""SESSION VARIABLES"""
 if 'count' not in st.session_state:
@@ -212,6 +218,8 @@ if 'messages' not in st.session_state:
     st.session_state['messages'] = [
         {"role": "system", "content": "You are a helpful chatbot."}
     ]
+if 'hist' not in st.session_state:
+    st.session_state['hist'] = """"""
 #"""END OF SESSION VARIABLES"""
 
 #"""UI"""
@@ -252,10 +260,10 @@ st.write('On the day you bring your newborn baby home, life as you know it chang
 text1 = st.text_area('Enter your query:')
 output = ""
 if st.button("Ask The Bot"):
-    file = open("convo.txt","r")
-    conversation_history = file.read()
-    file.close()
-    output,product = handle_input(text1,conversation_history,add_selectbox)
+    # file = open("convo.txt","r")
+    # conversation_history = file.read()
+    # file.close()
+    output,product = handle_input(text1,add_selectbox)
     if output == "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below":
         st.warning(output)
     else:
@@ -269,6 +277,7 @@ if st.button("Ask The Bot"):
 if st.button("Clear context"):
     st.session_state['count'] = 0
     del st.session_state['messages']
-    file = open("convo.txt","w")
-    file.write("")
-    file.close()
+    # file = open("convo.txt","w")
+    # file.write("")
+    # file.close()
+    del st.session_state['hist']
