@@ -91,7 +91,7 @@ def davinciC(query):
         limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
         return(limit, None)
     ss = calc_sim(query, embeddings)
-    if(st.session_state['count'] == 0):
+    if(st.session_state['count'] == 0 and ss[0][1]>0.85):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
         st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
         change_context()
