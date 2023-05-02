@@ -79,6 +79,7 @@ def handle_input(
     
     return message,product
 def change_context():
+    if(len(st.session_state['con_info']) > 0):
         context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {st.session_state['con_info'][0]}, matched with a score of {round(st.session_state['con_info'][1]*100)}%")
 #models
 def davinciC(query):    
