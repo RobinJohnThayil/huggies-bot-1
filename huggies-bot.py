@@ -89,6 +89,7 @@ def davinciC(query):
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
         st.session_state['con_info'] = [ss[0][0],ss[0][1]]
+        print(st.session_state['con_info'])
         #print(st.session_state['context'])
     if ss[0][1] > 0.85:
         link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
