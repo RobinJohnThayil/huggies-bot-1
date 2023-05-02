@@ -90,7 +90,7 @@ def davinciC(query):
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-	st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
+        st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
         change_context()
         st.session_state['con_info'] = [ss[0][0],ss[0][1]]
         print(st.session_state['con_info'])
