@@ -88,7 +88,7 @@ def davinciC(query):
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-	with container:
+        with container:
             st.write(f"This response is being augmented with our document(s) titled {ss[0][0]}, matched with a score of {ss[0][1]}")
         #print(st.session_state['context'])
     if ss[0][1] > 0.85:
