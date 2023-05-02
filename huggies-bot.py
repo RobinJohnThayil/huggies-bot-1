@@ -61,10 +61,12 @@ def handle_input(
     # Generate a response using GPT-3
     product = None
     if(model == 'Customized GPT3'):
+        change_context()
         message,product = davinciC(input_str)
     elif(model == 'Default GPT3'):
         message = davinciNC(input_str)
     elif(model == 'Customized ChatGPT (Experimental)'):
+        change_context()
         message,product = turbo(input_str)
 
     # Update the conversation history
@@ -141,6 +143,8 @@ def turbo(query):
     if(st.session_state['count'] == 0 and ss[0][1] > 0.85):
         context = "Please answer with the help of the following context if it is related to the question:\n"
         context += embeddings[embeddings.values == ss[0][0]].iloc[0][0]
+        st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
+        change_context()
         st.session_state['messages'].append({"role": "assistant", "content": context})
     if ss[0][1] > 0.85:
         link = "Click this link to get more information:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
