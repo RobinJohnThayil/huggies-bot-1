@@ -76,8 +76,8 @@ def handle_input(
         st.session_state['hist'] += phrase
     
     return message,product
-def change_context(title, score):
-        context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {title}, matched with a score of {round(score*100)}%")
+def change_context():
+        context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {st.session_state['con_info'][0]}, matched with a score of {round(st.session_state['con_info'][1]*100)}%")
 #models
 def davinciC(query):    
     #query = How to feed my baby in the first year
@@ -90,7 +90,8 @@ def davinciC(query):
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-        change_context(ss[0][0],ss[0][1])
+	st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
+        change_context()
         st.session_state['con_info'] = [ss[0][0],ss[0][1]]
         print(st.session_state['con_info'])
         #print(st.session_state['context'])
