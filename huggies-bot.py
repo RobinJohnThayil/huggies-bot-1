@@ -88,7 +88,7 @@ def davinciC(query):
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-        st.info(f"This response is being generated with the help of content taken from huggies.com titled {ss[0][0]}, matched with a score of {ss[0][1]}")
+        st.info(f"This response is being generated with the help of content taken from huggies.com titled {ss[0][0]}, matched with a score of {round(ss[0][1]*100)}%")
         #print(st.session_state['context'])
     if ss[0][1] > 0.85:
         link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
