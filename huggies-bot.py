@@ -296,3 +296,4 @@ if st.button("Clear context"):
     # file.write("")
     # file.close()
     del st.session_state['hist']
+    del st.session_state['con_info']
