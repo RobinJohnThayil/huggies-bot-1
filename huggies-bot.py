@@ -76,6 +76,8 @@ def handle_input(
         st.session_state['hist'] += phrase
     
     return message,product
+def change_context(title, score):
+        context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {title}, matched with a score of {round(score*100)}%")
 #models
 def davinciC(query):    
     #query = How to feed my baby in the first year
@@ -88,6 +90,7 @@ def davinciC(query):
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
+        change_context(ss[0][0],ss[0][1])
         st.session_state['con_info'] = [ss[0][0],ss[0][1]]
         print(st.session_state['con_info'])
         #print(st.session_state['context'])
@@ -250,9 +253,8 @@ st.sidebar.info('Please choose the model from the dropdown below.')
 st.set_option('deprecation.showfileUploaderEncoding', False)
 #add_selectbox = st.sidebar.selectbox("Which model would you like to use?", ("gpt-3.5-turbo", "text-davinci-003", "no context - davinci"))
 add_selectbox = st.sidebar.selectbox("", ("Customized GPT3", "Default GPT3","Customized ChatGPT (Experimental)"))
-if(len(st.session_state['con_info'])>0):
-    st.sidebar.info(f"This response is being generated with the help of content taken from huggies.com titled {st.session_state['con_info'][0]}, matched with a score of {round(float(st.session_state['con_info'][1])*100)}%")
- 
+with st.sidebar:
+        context_placeholder = st.empty()
 for count in range(25):
     st.sidebar.markdown("\n")
 st.sidebar.markdown("""---""")
@@ -282,6 +284,7 @@ if st.button("Ask The Bot"):
     st.session_state['count'] += 1
 if st.button("Clear context"):
     st.session_state['count'] = 0
+    context_placeholder.empty()
     del st.session_state['messages']
     # file = open("convo.txt","w")
     # file.write("")
