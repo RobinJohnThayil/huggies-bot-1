@@ -88,7 +88,7 @@ def davinciC(query):
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-        st.info(f"This response is being generated with the help of content taken from huggies.com titled {ss[0][0]}, matched with a score of {round(ss[0][1]*100)}%")
+        st.session_state['con_info'] = f"This response is being generated with the help of content taken from huggies.com titled {ss[0][0]}, matched with a score of {round(ss[0][1]*100)}%"
         #print(st.session_state['context'])
     if ss[0][1] > 0.85:
         link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
@@ -221,6 +221,8 @@ if 'messages' not in st.session_state:
     ]
 if 'hist' not in st.session_state:
     st.session_state['hist'] = """"""
+if 'con_info' not in st.session_state:
+    st.session_state['con_info'] = ""
 #"""END OF SESSION VARIABLES"""
 
 #"""UI"""
@@ -255,7 +257,9 @@ st.sidebar.markdown("""---""")
   
 st.sidebar.caption('Note: Some models have been trained with select public content from www.huggies.com')
 #st.sidebar.caption("Please reach out to robin.john@kcc.com for any queries", unsafe_allow_html=False)
-
+with st.sidebar:
+    st.info(st.session_state['con_info'])
+	
 st.write('On the day you bring your newborn baby home, life as you know it changes forever. We have put all tips, techniques and information in one place, to help make newborn baby care as easy as possible for new parents')
 
 text1 = st.text_area('Enter your query:')
