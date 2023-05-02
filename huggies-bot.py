@@ -88,7 +88,8 @@ def davinciC(query):
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-        st.info(f"This response is being augmented with our document(s) titled {ss[0][0]}, matched with a score of {ss[0][1]}")
+	with container:
+            st.write(f"This response is being augmented with our document(s) titled {ss[0][0]}, matched with a score of {ss[0][1]}")
         #print(st.session_state['context'])
     if ss[0][1] > 0.85:
         link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
@@ -258,27 +259,29 @@ st.sidebar.caption('Note: Some models have been trained with select public conte
 
 st.write('On the day you bring your newborn baby home, life as you know it changes forever. We have put all tips, techniques and information in one place, to help make newborn baby care as easy as possible for new parents')
 
-text1 = st.text_area('Enter your query:')
-output = ""
-if st.button("Ask The Bot"):
-    # file = open("convo.txt","r")
-    # conversation_history = file.read()
-    # file.close()
-    output,product = handle_input(text1,add_selectbox)
-    if output == "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below":
-        st.warning(output)
-    else:
-        #product = grab_product(output)
-        if product != None:
-            output += "\n" + "Here's a link to our relavant product:\n" + product[0]
-            #for i in product:
-            #    output += i + "\n"
-        st.success(output)
-    st.session_state['count'] += 1
-if st.button("Clear context"):
-    st.session_state['count'] = 0
-    del st.session_state['messages']
-    # file = open("convo.txt","w")
-    # file.write("")
-    # file.close()
-    del st.session_state['hist']
+container = st.container()
+with container:
+    text1 = st.text_area('Enter your query:')
+    output = ""
+    if st.button("Ask The Bot"):
+        # file = open("convo.txt","r")
+        # conversation_history = file.read()
+        # file.close()
+        output,product = handle_input(text1,add_selectbox)
+        if output == "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below":
+            st.warning(output)
+        else:
+            #product = grab_product(output)
+            if product != None:
+                output += "\n" + "Here's a link to our relavant product:\n" + product[0]
+                #for i in product:
+                #    output += i + "\n"
+            st.success(output)
+        st.session_state['count'] += 1
+    if st.button("Clear context"):
+        st.session_state['count'] = 0
+        del st.session_state['messages']
+        # file = open("convo.txt","w")
+        # file.write("")
+        # file.close()
+        del st.session_state['hist']
