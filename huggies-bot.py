@@ -257,8 +257,7 @@ st.sidebar.markdown("""---""")
   
 st.sidebar.caption('Note: Some models have been trained with select public content from www.huggies.com')
 #st.sidebar.caption("Please reach out to robin.john@kcc.com for any queries", unsafe_allow_html=False)
-with st.sidebar:
-    st.info(st.session_state['con_info'])
+st.sidebar.info(st.session_state['con_info'])
 	
 st.write('On the day you bring your newborn baby home, life as you know it changes forever. We have put all tips, techniques and information in one place, to help make newborn baby care as easy as possible for new parents')
 
