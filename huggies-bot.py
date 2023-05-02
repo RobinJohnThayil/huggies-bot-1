@@ -1,4 +1,4 @@
-#version: babybot+convo_hist+links+product_links
+#version: babybot+convo_hist+links+product_links+matched_content_score
 from bs4 import BeautifulSoup
 import requests
 import streamlit as st
@@ -76,6 +76,8 @@ def handle_input(
         st.session_state['hist'] += phrase
     
     return message,product
+def change_context(title, score):
+        context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {title}, matched with a score of {round(score*100)}%")
 #models
 def davinciC(query):    
     #query = How to feed my baby in the first year
@@ -88,6 +90,9 @@ def davinciC(query):
     ss = calc_sim(query, embeddings)
     if(st.session_state['count'] == 0):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
+        change_context(ss[0][0],ss[0][1])
+        st.session_state['con_info'] = [ss[0][0],ss[0][1]]
+        print(st.session_state['con_info'])
         #print(st.session_state['context'])
     if ss[0][1] > 0.85:
         link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
@@ -220,6 +225,8 @@ if 'messages' not in st.session_state:
     ]
 if 'hist' not in st.session_state:
     st.session_state['hist'] = """"""
+if 'con_info' not in st.session_state:
+    st.session_state['con_info'] = []
 #"""END OF SESSION VARIABLES"""
 
 #"""UI"""
@@ -246,8 +253,8 @@ st.sidebar.info('Please choose the model from the dropdown below.')
 st.set_option('deprecation.showfileUploaderEncoding', False)
 #add_selectbox = st.sidebar.selectbox("Which model would you like to use?", ("gpt-3.5-turbo", "text-davinci-003", "no context - davinci"))
 add_selectbox = st.sidebar.selectbox("", ("Customized GPT3", "Default GPT3","Customized ChatGPT (Experimental)"))
-
- 
+with st.sidebar:
+        context_placeholder = st.empty()
 for count in range(25):
     st.sidebar.markdown("\n")
 st.sidebar.markdown("""---""")
@@ -255,6 +262,7 @@ st.sidebar.markdown("""---""")
 st.sidebar.caption('Note: Some models have been trained with select public content from www.huggies.com')
 #st.sidebar.caption("Please reach out to robin.john@kcc.com for any queries", unsafe_allow_html=False)
 
+	
 st.write('On the day you bring your newborn baby home, life as you know it changes forever. We have put all tips, techniques and information in one place, to help make newborn baby care as easy as possible for new parents')
 
 text1 = st.text_area('Enter your query:')
@@ -276,6 +284,7 @@ if st.button("Ask The Bot"):
     st.session_state['count'] += 1
 if st.button("Clear context"):
     st.session_state['count'] = 0
+    context_placeholder.empty()
     del st.session_state['messages']
     # file = open("convo.txt","w")
     # file.write("")
