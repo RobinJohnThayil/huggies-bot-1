@@ -81,6 +81,10 @@ def handle_input(
 def change_context():
     if(len(st.session_state['con_info']) > 0):
         context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {st.session_state['con_info'][0]}, matched with a score of {round(st.session_state['con_info'][1]*100)}%")
+def clear_info():
+    if(st.session_state['count']>0):
+        st.session_state['con_info'] = []
+        st.session_state['count'] = 0
 #models
 def davinciC(query):    
     #query = How to feed my baby in the first year
@@ -95,8 +99,6 @@ def davinciC(query):
         st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
         st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
         change_context()
-        st.session_state['con_info'] = [ss[0][0],ss[0][1]]
-        print(st.session_state['con_info'])
         #print(st.session_state['context'])
     if ss[0][1] > 0.85:
         link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
@@ -159,13 +161,17 @@ def turbo(query):
         return(limit, None)
     
     base_model = "gpt-3.5-turbo"
-    completion = openai.ChatCompletion.create(
-        model = base_model,
-        messages = st.session_state['messages'],
-        max_tokens = 1024,
-        n = 1,
-        temperature = 0,
-    )
+    try:
+        completion = openai.ChatCompletion.create(
+            model = base_model,
+            messages = st.session_state['messages'],
+            max_tokens = 1024,
+            n = 1,
+            temperature = 0,
+        )
+    except:
+        st.warning("You are being rate limited by Openai, please try again later.")
+        return("", None)
     response = completion['choices'][0]['message']['content']
     st.session_state['messages'].append({"role": "assistant", "content": response})
     if ss[0][1] > 0.85:
@@ -258,7 +264,7 @@ st.markdown(
 st.sidebar.info('Please choose the model from the dropdown below.')
 st.set_option('deprecation.showfileUploaderEncoding', False)
 #add_selectbox = st.sidebar.selectbox("Which model would you like to use?", ("gpt-3.5-turbo", "text-davinci-003", "no context - davinci"))
-add_selectbox = st.sidebar.selectbox("", ("Customized GPT3", "Default GPT3","Customized ChatGPT (Experimental)"))
+add_selectbox = st.sidebar.selectbox("", ("Customized GPT3", "Default GPT3","Customized ChatGPT (Experimental)"), on_change=clear_info())
 with st.sidebar:
         context_placeholder = st.empty()
 for count in range(25):
