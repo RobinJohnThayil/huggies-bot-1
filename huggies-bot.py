@@ -57,25 +57,26 @@ def handle_input(
                input_str : str,
     model : str
                  ):
-    """Updates the conversation history and generates a response using one of the models below."""
-    # Generate a response using GPT-3
+    """Tries to classify the type of user, generates a response using one the models and updates conversation history """
     product = None
-    if(model == 'Customized GPT3'):
-        change_context()
-        message,product = davinciC(input_str)
-    elif(model == 'Default GPT3'):
-        message = davinciNC(input_str)
-    elif(model == 'Customized ChatGPT (Experimental)'):
-        change_context()
-        message,product = turbo(input_str)
+    user_type = calculate_context(input_str)
+    if user_type == "Information-seeking":
+        if(model == 'Customized GPT3'):
+            change_context()
+            message,product = davinciC(input_str)
+        elif(model == 'Default GPT3'):
+            message = davinciNC(input_str)
+        elif(model == 'Customized ChatGPT (Experimental)'):
+            change_context()
+            message,product = turbo(input_str)
 
-    # Update the conversation history
-    if(message != "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"):
-        phrase = f"Q: {input_str}\nA:{message}\n"
-        # file = open("convo.txt","a")
-        # file.write(phrase)
-        # file.close()
-        st.session_state['hist'] += phrase
+        # Update the conversation history
+        if(message != "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below" and model == 'Customized GPT3'):
+            phrase = f"Q: {input_str}\nA:{message}\n"
+            # file = open("convo.txt","a")
+            # file.write(phrase)
+            # file.close()
+            st.session_state['hist'] += phrase
     
     return message,product
 def change_context():
@@ -218,7 +219,31 @@ def grab_product(resp):
         return None
     else:
         return(amazon_links)
+def calculate_context(query):
+    """Classify a customer as Information-seeking or Potential-buyer or Unsure based on the input query"""
+    prompt =f"""
+You are a bot that answers customer questions on an ecommerce website.
+A customer visting the website will be in one of the below states:
+1. Information-seeking: if the customer is just trying to gather information but has no intention to buy the product
+2. Potential-buyer: if the customer is interested in buying the product soon.
+3. Unsure: if you are unable to estimate the state
 
+
+Here are some comma-separated examples for two categories:
+1. Information-seeking: "I have ... condition. Can you help?", "I need information around ..."
+2. Potential-buyer: "What product would you recommend?", "Do you sell ...?"
+
+Your task is to classify a customer as Information-seeking or Potential-buyer or Unsure based on this input:
+{query}. Provide only classification as answer
+"""
+    model="gpt-3.5-turbo"
+    messages = [{"role": "user", "content": prompt}]
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=messages,
+        temperature=0,
+    )
+    return(response['choices'][0]['message']['content'])
 
 #init conversation history
 # f = open("convo.txt","a")
