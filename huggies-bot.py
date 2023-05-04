@@ -59,6 +59,7 @@ def handle_input(
                  ):
     """Tries to classify the type of user and generates a response using one the models """
     st.session_state['user_type'] = calculate_context(input_str)
+    print(st.session_state['user_type'])
     if(model == 'Customized GPT3'):
         change_context()
         message = davinciC(input_str)
