@@ -1,4 +1,4 @@
-#version: babybot+convo_hist+links+product_links+matched_content_score
+#version: babybot+convo_hist+links+product_links+matched_content_score+context_aware
 from bs4 import BeautifulSoup
 import requests
 import streamlit as st
@@ -8,7 +8,7 @@ import openai
 import re
 from PIL import Image
 import tiktoken
-
+from time import sleep
 image = Image.open('fotor_2023-3-9_15_18_29.png')
 st.image(image, width = 180)
 st.title("Baby Bot")
@@ -75,12 +75,14 @@ def handle_input(
 def change_context():
     if(len(st.session_state['con_info']) > 0):
         context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {st.session_state['con_info'][0]}, matched with a score of {round(st.session_state['con_info'][1]*100)}%")
+    type_placeholder.info(f"The user is identified as:{st.session_state['user_type']}")
 def clear_info():
     if st.session_state['count'] > 0:
         st.session_state['count'] = 0
         del st.session_state['messages']
         try:
             context_placeholder.empty()
+            sleep(0.01)
         except:
             pass
         del st.session_state['con_info']
@@ -312,6 +314,7 @@ st.set_option('deprecation.showfileUploaderEncoding', False)
 add_selectbox = st.sidebar.selectbox("", ("Customized GPT3", "Default GPT3","Customized ChatGPT (Experimental)"), on_change=clear_info())
 with st.sidebar:
         context_placeholder = st.empty()
+        type_placeholder = st.empty()
 for count in range(25):
     st.sidebar.markdown("\n")
 st.sidebar.markdown("""---""")
@@ -328,10 +331,11 @@ if st.button("Ask The Bot"):
     # file = open("convo.txt","r")
     # conversation_history = file.read()
     # file.close()
-    output = handle_input(text1,add_selectbox)
-    if output == "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below":
-        st.warning(output)
-    else:
-        st.success(output)
+    with st.spinner(text="In progress..."):    
+        output = handle_input(text1,add_selectbox)
+        if output == "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below":
+            st.warning(output)
+        else:
+            st.success(output)
 if st.button("Clear context"):
     clear_info()
