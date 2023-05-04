@@ -268,6 +268,7 @@ Your task is to classify a customer as Information-seeking or Potential-buyer or
         messages=messages,
         temperature=0,
     )
+    print(response['choices'][0]['message']['content'])
     return(response['choices'][0]['message']['content'])
 
 
