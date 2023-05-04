@@ -82,6 +82,7 @@ def clear_info():
         del st.session_state['messages']
         try:
             context_placeholder.empty()
+            type_placeholder.empty()
             sleep(0.01)
         except:
             pass
