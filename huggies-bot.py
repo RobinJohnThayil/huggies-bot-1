@@ -93,7 +93,7 @@ def davinciC(query):
     #query = How to feed my baby in the first year
     link = ''
     product = None
-    type_placeholder.info(f"The user is identified as:{st.session_state['user_type']}")
+    utype.write(f"The user state is:{st.session_state['user_type']}")
     e_token_length = num_tokens_from_string(query, "cl100k_base")
     if(e_token_length > 7000):
         limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
@@ -314,8 +314,7 @@ st.set_option('deprecation.showfileUploaderEncoding', False)
 add_selectbox = st.sidebar.selectbox("", ("Customized GPT3", "Default GPT3","Customized ChatGPT (Experimental)"), on_change=clear_info())
 with st.sidebar:
         context_placeholder = st.empty()
-with st.sidebar:
-        type_placeholder = st.empty()
+utype = st.sidebar.container()
 for count in range(25):
     st.sidebar.markdown("\n")
 st.sidebar.markdown("""---""")
