@@ -94,7 +94,7 @@ def davinciC(query):
     link = ''
     product = None
     type_placeholder.info(f"The user is identified as:{st.session_state['user_type']}")
-    st.write(st.session_state['user_type'])
+    st.sidebar.write(st.session_state['user_type'])
     e_token_length = num_tokens_from_string(query, "cl100k_base")
     if(e_token_length > 7000):
         limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
