@@ -76,16 +76,17 @@ def change_context():
     if(len(st.session_state['con_info']) > 0):
         context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {st.session_state['con_info'][0]}, matched with a score of {round(st.session_state['con_info'][1]*100)}%")
 def clear_info():
-    st.session_state['count'] = 0
-    del st.session_state['messages']
-    try:
-        context_placeholder.empty()
-    except:
-        pass
-    st.session_state['con_info'] = []
-    del st.session_state['hist']
-    del st.session_state['user_type']
-    del st.session_state['prev_resp']
+    if st.session_state['count'] > 0:
+        st.session_state['count'] = 0
+        del st.session_state['messages']
+        try:
+            context_placeholder.empty()
+        except:
+            pass
+        del st.session_state['con_info']
+        del st.session_state['hist']
+        del st.session_state['user_type']
+        del st.session_state['prev_resp']
 #models
 def davinciC(query):    
     #query = How to feed my baby in the first year
