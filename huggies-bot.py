@@ -100,6 +100,7 @@ def davinciC(query):
         return(limit)
 
     if "Information" in st.session_state['user_type']:
+        st.write("yes info")
         ss = calc_sim(query, embeddings)
         if(st.session_state['count'] == 0 and ss[0][1]>0.85):
             st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
