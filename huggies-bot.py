@@ -89,7 +89,6 @@ def clear_info():
             pass
         del st.session_state['con_info']
         del st.session_state['hist']
-        del st.session_state['user_type']
         del st.session_state['prev_resp']
 #models
 def davinciC(query):    
