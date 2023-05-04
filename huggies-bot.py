@@ -142,7 +142,7 @@ A:"""
 You are a bot that is programemed to answers customer questions on an ecommerce website and recommend their products.
 Q:{query}
 A:
-Only use the following brand for your response -{product}"""
+Include only the following link for your response -{product}"""
         message = [{"role": "user", "content": prompt}]
         output = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
