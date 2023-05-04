@@ -59,7 +59,6 @@ def handle_input(
                  ):
     """Tries to classify the type of user and generates a response using one the models """
     st.session_state['user_type'] = calculate_context(input_str)
-    type_placeholder.info(f"The user is identified as:{st.session_state['user_type']}")
     if(model == 'Customized GPT3'):
         change_context()
         message = davinciC(input_str)
@@ -94,7 +93,7 @@ def davinciC(query):
     #query = How to feed my baby in the first year
     link = ''
     product = None
-    st.write({st.session_state['user_type']})
+    type_placeholder.info(f"The user is identified as:{st.session_state['user_type']}")
     e_token_length = num_tokens_from_string(query, "cl100k_base")
     if(e_token_length > 7000):
         limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
