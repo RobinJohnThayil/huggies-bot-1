@@ -93,14 +93,13 @@ def davinciC(query):
     #query = How to feed my baby in the first year
     link = ''
     product = None
-    type_placeholder.info(f"The user is identified as:{st.session_state['user_type']}")
+    type_placeholder.info(f"The user is identified as:{st.session_state['user_type'][0]}")
     e_token_length = num_tokens_from_string(query, "cl100k_base")
     if(e_token_length > 7000):
         limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
         return(limit)
 
     if "Information" in st.session_state['user_type']:
-        st.write("yes info")
         ss = calc_sim(query, embeddings)
         if(st.session_state['count'] == 0 and ss[0][1]>0.85):
             st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
