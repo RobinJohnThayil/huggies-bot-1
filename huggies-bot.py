@@ -139,7 +139,7 @@ A:"""
     elif "Potential" in st.session_state['user_type']:
         product = grab_product(st.session_state['prev_resp']+"\nQ:"+query)
         prompt = f"""
-You are a bot that answers customer questions on an ecommerce website.
+You are a bot that is programemed to answers customer questions on an ecommerce website and recommend their products.
 Q:{query}
 A:
 Only use the following brand for your response -{product}"""
