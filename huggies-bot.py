@@ -1,4 +1,4 @@
-#version: babybot+convo_hist+links+product_links+matched_content_score+context_aware
+#version: babybot+convo_hist+links+product_links+matched_content_score
 from bs4 import BeautifulSoup
 import requests
 import streamlit as st
@@ -8,7 +8,7 @@ import openai
 import re
 from PIL import Image
 import tiktoken
-from time import sleep
+
 image = Image.open('fotor_2023-3-9_15_18_29.png')
 st.image(image, width = 180)
 st.title("Baby Bot")
@@ -57,37 +57,34 @@ def handle_input(
                input_str : str,
     model : str
                  ):
-    """Tries to classify the type of user and generates a response using one the models """
-    st.session_state['user_type'] = calculate_context(input_str)
-    type_placeholder.info(f"The current user state is: {st.session_state['user_type']}")
+    """Updates the conversation history and generates a response using one of the models below."""
+    # Generate a response using GPT-3
+    product = None
     if(model == 'Customized GPT3'):
         change_context()
-        message = davinciC(input_str)
+        message,product = davinciC(input_str)
     elif(model == 'Default GPT3'):
         message = davinciNC(input_str)
     elif(model == 'Customized ChatGPT (Experimental)'):
         change_context()
-        message = turbo(input_str)
+        message,product = turbo(input_str)
 
     # Update the conversation history
-        
+    if(message != "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"):
+        phrase = f"Q: {input_str}\nA:{message}\n"
+        # file = open("convo.txt","a")
+        # file.write(phrase)
+        # file.close()
+        st.session_state['hist'] += phrase
     
-    return message
+    return message,product
 def change_context():
     if(len(st.session_state['con_info']) > 0):
         context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {st.session_state['con_info'][0]}, matched with a score of {round(st.session_state['con_info'][1]*100)}%")
 def clear_info():
-    if st.session_state['count'] > 0:
+    if(st.session_state['count']>0):
+        st.session_state['con_info'] = []
         st.session_state['count'] = 0
-        del st.session_state['messages']
-        try:
-            context_placeholder.empty()
-            sleep(0.01)
-        except:
-            pass
-        del st.session_state['con_info']
-        del st.session_state['hist']
-        del st.session_state['prev_resp']
 #models
 def davinciC(query):    
     #query = How to feed my baby in the first year
@@ -96,58 +93,37 @@ def davinciC(query):
     e_token_length = num_tokens_from_string(query, "cl100k_base")
     if(e_token_length > 7000):
         limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
-        return(limit)
-
-    if "Information" in st.session_state['user_type']:
-        ss = calc_sim(query, embeddings)
-        if(st.session_state['count'] == 0 and ss[0][1]>0.85):
-            st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-            st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
-            change_context()
-            st.session_state['count'] += 1
-            #print(st.session_state['context'])
-        if ss[0][1] > 0.85:
-            link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
-        prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context {link}
+        return(limit, None)
+    ss = calc_sim(query, embeddings)
+    if(st.session_state['count'] == 0 and ss[0][1]>0.85):
+        st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
+        st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
+        change_context()
+        #print(st.session_state['context'])
+    if ss[0][1] > 0.85:
+        link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
+    prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context {link}
 
 Context:
 {st.session_state['context']}
 {st.session_state['hist']}
 Q:{query}
 A:"""
-        token_length = num_tokens_from_string(prompt, "p50k_base")
-        if(token_length > 4000):
-            limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
-            return(limit)
-        base_model = "text-davinci-003"
-        completion = openai.Completion.create(
-            model = base_model,
-            prompt = prompt,
-            max_tokens = 1024,
-            n = 1,
-            temperature = 0,
-        )
-        resp = completion.choices[0].text
-
-        phrase = f"Q: {query}\nA:{resp}\n"
-        st.session_state['hist'] += phrase
-        st.session_state['prev_resp'] = resp
-
-        return(resp)
-
-    elif "Potential" in st.session_state['user_type']:
-        product = grab_product(st.session_state['prev_resp']+"\nQ:"+query)
-        prompt = f"""
-You are a bot that is programemed to answers customer questions on an ecommerce website and recommend their products.
-Q:{query}
-A:
-Include only the following link for your response -{product}"""
-        message = [{"role": "user", "content": prompt}]
-        output = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=message,
-        )
-        return(output['choices'][0]['message']['content'])
+    token_length = num_tokens_from_string(prompt, "p50k_base")
+    if(token_length > 4000):
+        limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
+        return(limit, None)
+    base_model = "text-davinci-003"
+    completion = openai.Completion.create(
+        model = base_model,
+        prompt = prompt,
+        max_tokens = 1024,
+        n = 1,
+        temperature = 0,
+    )
+    if ss[0][1] > 0.70:
+        product = grab_product(completion.choices[0].text)
+    return(completion.choices[0].text,product)
 def davinciNC(query):
     base_model = "text-davinci-003"
     completion = openai.Completion.create(
@@ -163,6 +139,7 @@ def turbo(query):
     link = ''
     product = None
     txt = query
+    token_length = num_tokens_from_string(query, "p50k_base")
     
     st.session_state['messages'].append({"role": "user", "content": query})
     ss = calc_sim(query, embeddings)
@@ -181,7 +158,7 @@ def turbo(query):
     prompt_length = num_tokens_from_string(txt, "p50k_base")
     if(prompt_length > 4000):
         limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
-        return(limit)
+        return(limit, None)
     
     base_model = "gpt-3.5-turbo"
     try:
@@ -193,14 +170,14 @@ def turbo(query):
             temperature = 0,
         )
     except:
-        st.warning("You are being rate limited! OpenAI enforces rate limits on the requests you can make to the API. These are applied over requests-per-minute and tokens-per-minute, please try again in a bit.")
-        return("")
+        st.warning("You are being rate limited by Openai, please try again later.")
+        return("", None)
     response = completion['choices'][0]['message']['content']
     st.session_state['messages'].append({"role": "assistant", "content": response})
     if ss[0][1] > 0.85:
         product = grab_product(response)
-    response += link + "Here's a link to our relavant product:\n" + product
-    return(response)
+    response += link
+    return(response, product)
 
 def grab_product(resp):
     #query = "List out potential products from the paragraph below-\n"+resp
@@ -219,7 +196,7 @@ def grab_product(resp):
     model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
         return None
-    search = model_output + " huggies amazon"
+    search = model_output + " huggies product link buy"
     print("search term:",search)
     url = 'https://www.google.com/search'
 
@@ -240,33 +217,14 @@ def grab_product(resp):
     if(len(amazon_links) == 0):
         return None
     else:
-        return(amazon_links[0])
-def calculate_context(query):
-    """Classify a customer as Information-seeking or Potential-buyer or Unsure based on the input query"""
-    prompt =f"""
-You are a bot that answers customer questions on an ecommerce website.
-A customer visting the website will be in one of the below states:
-1. Information-seeking: if the customer is just trying to gather information but has no intention to buy the product
-2. Potential-buyer: if the customer is interested in buying the product soon.
-3. Unsure: if you are unable to estimate the state
+        return(amazon_links)
 
 
-Here are some comma-separated examples for two categories:
-1. Information-seeking: "I have ... condition. Can you help?", "I need information around ..."
-2. Potential-buyer: "What product would you recommend?", "Do you sell ...?"
-
-Your task is to classify a customer as Information-seeking or Potential-buyer or Unsure based on this input:
-{query}. Provide only classification as answer
-"""
-    model="gpt-3.5-turbo"
-    messages = [{"role": "user", "content": prompt}]
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        temperature=0,
-    )
-    return(response['choices'][0]['message']['content'])
-
+#init conversation history
+# f = open("convo.txt","a")
+# f.write("")
+# f.close()
+# conversation_history = ''''''
 
 #"""SESSION VARIABLES"""
 if 'count' not in st.session_state:
@@ -281,10 +239,6 @@ if 'hist' not in st.session_state:
     st.session_state['hist'] = """"""
 if 'con_info' not in st.session_state:
     st.session_state['con_info'] = []
-# if 'user_type' not in st.session_state:
-#     st.session_state['user_type'] = ""
-if 'prev_resp' not in st.session_state:
-    st.session_state['prev_resp'] = ""
 #"""END OF SESSION VARIABLES"""
 
 #"""UI"""
@@ -313,7 +267,6 @@ st.set_option('deprecation.showfileUploaderEncoding', False)
 add_selectbox = st.sidebar.selectbox("", ("Customized GPT3", "Default GPT3","Customized ChatGPT (Experimental)"), on_change=clear_info())
 with st.sidebar:
         context_placeholder = st.empty()
-        type_placeholder = st.empty()
 for count in range(25):
     st.sidebar.markdown("\n")
 st.sidebar.markdown("""---""")
@@ -330,11 +283,23 @@ if st.button("Ask The Bot"):
     # file = open("convo.txt","r")
     # conversation_history = file.read()
     # file.close()
-    with st.spinner(text="In progress..."):    
-        output = handle_input(text1,add_selectbox)
-        if output == "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below":
-            st.warning(output)
-        else:
-            st.success(output)
+    output,product = handle_input(text1,add_selectbox)
+    if output == "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below":
+        st.warning(output)
+    else:
+        #product = grab_product(output)
+        if product != None:
+            output += "\n" + "Here's a link to our relavant product:\n" + product[0]
+            #for i in product:
+            #    output += i + "\n"
+        st.success(output)
+    st.session_state['count'] += 1
 if st.button("Clear context"):
-    clear_info()
+    st.session_state['count'] = 0
+    context_placeholder.empty()
+    del st.session_state['messages']
+    # file = open("convo.txt","w")
+    # file.write("")
+    # file.close()
+    del st.session_state['hist']
+    del st.session_state['con_info']
