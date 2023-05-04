@@ -81,7 +81,6 @@ def clear_info():
         del st.session_state['messages']
         try:
             context_placeholder.empty()
-            type_placeholder.empty()
             sleep(0.01)
         except:
             pass
@@ -93,7 +92,7 @@ def davinciC(query):
     #query = How to feed my baby in the first year
     link = ''
     product = None
-    utype.write(f"The user state is:{st.session_state['user_type']}")
+    st.sidebar.write(f"The user state is:{st.session_state['user_type']}")
     e_token_length = num_tokens_from_string(query, "cl100k_base")
     if(e_token_length > 7000):
         limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
