@@ -136,7 +136,7 @@ A:"""
         return(resp)
 
     elif "Potential" in st.session_state['user_type']:
-        product = grab_product(st.session_state['prev_resp']+"\nQ:"+query)
+        product = grab_product(query)
         prompt = f"""
 You are a bot that is programemed to answers customer questions on an ecommerce website and recommend their products.
 Q:{query}
