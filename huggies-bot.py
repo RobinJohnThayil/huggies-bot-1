@@ -59,6 +59,7 @@ def handle_input(
                  ):
     """Tries to classify the type of user and generates a response using one the models """
     st.session_state['user_type'] = calculate_context(input_str)
+    type_placeholder.info(f"The user is identified as:{st.session_state['user_type']}")
     print(st.session_state['user_type'])
     if(model == 'Customized GPT3'):
         change_context()
@@ -76,7 +77,6 @@ def handle_input(
 def change_context():
     if(len(st.session_state['con_info']) > 0):
         context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {st.session_state['con_info'][0]}, matched with a score of {round(st.session_state['con_info'][1]*100)}%")
-    type_placeholder.info(f"The user is identified as:{st.session_state['user_type']}")
 def clear_info():
     if st.session_state['count'] > 0:
         st.session_state['count'] = 0
@@ -268,7 +268,6 @@ Your task is to classify a customer as Information-seeking or Potential-buyer or
         messages=messages,
         temperature=0,
     )
-    st.write(response['choices'][0]['message']['content'])
     return(response['choices'][0]['message']['content'])
 
 
