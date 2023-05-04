@@ -82,8 +82,8 @@ def clear_info():
         context_placeholder.empty()
     except:
         pass
+    st.session_state['con_info'] = []
     del st.session_state['hist']
-    del st.session_state['con_info']
     del st.session_state['user_type']
     del st.session_state['prev_resp']
 #models
