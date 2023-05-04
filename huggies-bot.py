@@ -59,7 +59,6 @@ def handle_input(
                  ):
     """Tries to classify the type of user and generates a response using one the models """
     st.session_state['user_type'] = calculate_context(input_str)
-    st.write(f"user type:{st.session_state['user_type']}")
     type_placeholder.info(f"The user is identified as:{st.session_state['user_type']}")
     if(model == 'Customized GPT3'):
         change_context()
@@ -283,8 +282,8 @@ if 'hist' not in st.session_state:
     st.session_state['hist'] = """"""
 if 'con_info' not in st.session_state:
     st.session_state['con_info'] = []
-if 'user_type' not in st.session_state:
-    st.session_state['user_type'] = ""
+# if 'user_type' not in st.session_state:
+#     st.session_state['user_type'] = ""
 if 'prev_resp' not in st.session_state:
     st.session_state['prev_resp'] = ""
 #"""END OF SESSION VARIABLES"""
