@@ -104,7 +104,7 @@ def davinciC(query):
         limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
         return(limit)
 
-    if "Information" in st.session_state['user_type']:
+    if "Information" or "Unsure" in st.session_state['user_type']:
         ss = calc_sim(query, embeddings)
         if(st.session_state['dcount'] == 0 and ss[0][1]>0.85):
             st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
@@ -163,7 +163,7 @@ def turbo(query):
     link = ''
     txt = query
     
-    if "Information" in st.session_state['user_type']:
+    if "Information" or "Unsure" in st.session_state['user_type']:
         st.session_state['messages'].append({"role": "user", "content": query})
         ss = calc_sim(query, embeddings)
         if(st.session_state['tcount'] == 0 and ss[0][1] > 0.85):
@@ -311,7 +311,7 @@ A customer visting the website will be in one of the below states:
 
 Here are some comma-separated examples for two categories:
 1. Information-seeking: "I have ... condition. Can you help?", "I need information around ..."
-2. Potential-buyer: "What product would you recommend?", "Do you sell ...?"
+2. Potential-buyer: "What product would you recommend?", "Do you sell ...?", "Any products ..."
 
 Your task is to classify a customer as Information-seeking or Potential-buyer or Unsure based on this input:
 {query}. Provide only classification as answer
