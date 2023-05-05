@@ -143,8 +143,11 @@ A:"""
 
     elif "Potential" in st.session_state['user_type']:
         plink = grab_product(st.session_state['prev_resp']+"\nQ:"+query)
-        product = f"Here's a link to one of our products - {plink}"
-        return(product)
+        if plink == None:
+            return(None)
+        else:
+            product = f"Here's a link to one of our products - {plink}"
+            return(product)
 def davinciNC(query):
     base_model = "text-davinci-003"
     completion = openai.Completion.create(
@@ -205,8 +208,11 @@ def turbo(query):
     elif "Potential" in st.session_state['user_type']:
         plink = grab_product(st.session_state['prev_resp']+"\nQ:"+query)
         #product = show_product(query,plink)
-        product = f"Here's a link to one of our products - {plink}"
-        return(product)
+        if plink == None:
+            return(None)
+        else:
+            product = f"Here's a link to one of our products - {plink}"
+            return(product)
 def show_product(query,product):
     if product == None:
         return None
