@@ -143,20 +143,7 @@ A:"""
 
     elif "Potential" in st.session_state['user_type']:
         plink = grab_product(st.session_state['prev_resp']+"\nQ:"+query)
-#         if product == None:
-#             return None
-#         prompt = f"""
-# You are a bot that is programmed to answers customer questions on an ecommerce website and recommend their products.
-# Q:{query}
-# A:
-# Include only the following link for your response -{product}"""
-#         message = [{"role": "user", "content": prompt}]
-#         output = openai.ChatCompletion.create(
-#             model="gpt-3.5-turbo",
-#             messages=message,
-#         )
-#         return(output['choices'][0]['message']['content'])
-        product = show_product(query,plink)
+        product = f"Here's a link to one of our products - {plink}"
         return(product)
 def davinciNC(query):
     base_model = "text-davinci-003"
