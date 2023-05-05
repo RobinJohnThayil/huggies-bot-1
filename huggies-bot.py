@@ -61,11 +61,15 @@ def handle_input(
     st.session_state['user_type'] = calculate_context(input_str)
     type_placeholder.info(f"The current user state is: {st.session_state['user_type']}")
     if(model == 'Customized GPT3'):
+        if st.session_state['tcount'] > 0:
+            clear_info()
         change_context()
         message = davinciC(input_str)
     elif(model == 'Default GPT3'):
         message = davinciNC(input_str)
     elif(model == 'Customized ChatGPT (Experimental)'):
+        if st.session_state['dcount'] > 0:
+            clear_info()
         change_context()
         message = turbo(input_str)
 
@@ -77,17 +81,19 @@ def change_context():
     if(len(st.session_state['con_info']) > 0):
         context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {st.session_state['con_info'][0]}, matched with a score of {round(st.session_state['con_info'][1]*100)}%")
 def clear_info():
-    if st.session_state['count'] > 0:
-        st.session_state['count'] = 0
-        del st.session_state['messages']
-        try:
-            context_placeholder.empty()
-            sleep(0.01)
-        except:
-            pass
-        del st.session_state['con_info']
-        del st.session_state['hist']
-        del st.session_state['prev_resp']
+    #print("clear info", st.session_state['count'])
+    if st.session_state['dcount'] > 0 or st.session_state['tcount'] > 0:
+        st.session_state['dcount'] = 0
+        st.session_state['tcount'] = 0
+        st.session_state['messages'] = [{"role": "system", "content": "You are a helpful chatbot."}]
+        # try:
+        #     context_placeholder.empty()
+        #     sleep(0.01)
+        # except:
+        #     pass
+        st.session_state['con_info'] = []
+        st.session_state['hist'] = """"""
+        st.session_state['prev_resp'] = ""
 #models
 def davinciC(query):    
     #query = How to feed my baby in the first year
@@ -100,11 +106,11 @@ def davinciC(query):
 
     if "Information" in st.session_state['user_type']:
         ss = calc_sim(query, embeddings)
-        if(st.session_state['count'] == 0 and ss[0][1]>0.85):
+        if(st.session_state['dcount'] == 0 and ss[0][1]>0.85):
             st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
             st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
             change_context()
-            st.session_state['count'] += 1
+            st.session_state['dcount'] += 1
             #print(st.session_state['context'])
         if ss[0][1] > 0.85:
             link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
@@ -136,18 +142,22 @@ A:"""
         return(resp)
 
     elif "Potential" in st.session_state['user_type']:
-        product = grab_product(st.session_state['prev_resp']+"\nQ:"+query)
-        prompt = f"""
-You are a bot that is programemed to answers customer questions on an ecommerce website and recommend their products.
-Q:{query}
-A:
-Include only the following link for your response -{product}"""
-        message = [{"role": "user", "content": prompt}]
-        output = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=message,
-        )
-        return(output['choices'][0]['message']['content'])
+        plink = grab_product(st.session_state['prev_resp']+"\nQ:"+query)
+#         if product == None:
+#             return None
+#         prompt = f"""
+# You are a bot that is programmed to answers customer questions on an ecommerce website and recommend their products.
+# Q:{query}
+# A:
+# Include only the following link for your response -{product}"""
+#         message = [{"role": "user", "content": prompt}]
+#         output = openai.ChatCompletion.create(
+#             model="gpt-3.5-turbo",
+#             messages=message,
+#         )
+#         return(output['choices'][0]['message']['content'])
+        product = show_product(query,plink)
+        return(product)
 def davinciNC(query):
     base_model = "text-davinci-003"
     completion = openai.Completion.create(
@@ -161,65 +171,115 @@ def davinciNC(query):
 def turbo(query):
     #query = "How to feed my baby in the first year"
     link = ''
-    product = None
     txt = query
     
-    st.session_state['messages'].append({"role": "user", "content": query})
-    ss = calc_sim(query, embeddings)
-    if(st.session_state['count'] == 0 and ss[0][1] > 0.85):
-        context = "Please answer with the help of the following context if it is related to the question:\n"
-        context += embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-        st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
-        change_context()
-        st.session_state['messages'].append({"role": "assistant", "content": context})
-    if ss[0][1] > 0.85:
-        link = "Click this link to get more information:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
+    if "Information" in st.session_state['user_type']:
+        st.session_state['messages'].append({"role": "user", "content": query})
+        ss = calc_sim(query, embeddings)
+        if(st.session_state['tcount'] == 0 and ss[0][1] > 0.85):
+            context = "Please answer with the help of the following context if it is related to the question:\n"
+            context += embeddings[embeddings.values == ss[0][0]].iloc[0][0]
+            st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
+            change_context()
+            st.session_state['messages'].append({"role": "assistant", "content": context})
+            st.session_state['tcount']+= 1
+        if ss[0][1] > 0.85:
+            link = "Click this link to get more information:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
 
-    #TOKEN LIMIT
-    for i in st.session_state['messages']:
-        txt += i["content"]
-    prompt_length = num_tokens_from_string(txt, "p50k_base")
-    if(prompt_length > 4000):
-        limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
-        return(limit)
-    
-    base_model = "gpt-3.5-turbo"
-    try:
-        completion = openai.ChatCompletion.create(
-            model = base_model,
-            messages = st.session_state['messages'],
-            max_tokens = 1024,
-            n = 1,
-            temperature = 0,
-        )
-    except:
-        st.warning("You are being rate limited! OpenAI enforces rate limits on the requests you can make to the API. These are applied over requests-per-minute and tokens-per-minute, please try again in a bit.")
-        return("")
-    response = completion['choices'][0]['message']['content']
-    st.session_state['messages'].append({"role": "assistant", "content": response})
-    if ss[0][1] > 0.85:
-        product = grab_product(response)
-    response += link + "Here's a link to our relavant product:\n" + product
-    return(response)
-
-def grab_product(resp):
-    #query = "List out potential products from the paragraph below-\n"+resp
-    query = "List potential huggies products from the paragraph below,\n"+resp
+        #TOKEN LIMIT
+        for i in st.session_state['messages']:
+            txt += i["content"]
+        prompt_length = num_tokens_from_string(txt, "p50k_base")
+        if(prompt_length > 4000):
+            limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
+            return(limit)
+        
+        base_model = "gpt-3.5-turbo"
+        try:
+            completion = openai.ChatCompletion.create(
+                model = base_model,
+                messages = st.session_state['messages'],
+                max_tokens = 1024,
+                n = 1,
+                temperature = 0,
+            )
+        except:
+            st.warning("You are being rate limited! OpenAI enforces rate limits on the requests you can make to the API. These are applied over requests-per-minute and tokens-per-minute, please try again in a bit.")
+            return("")
+        response = completion['choices'][0]['message']['content']
+        st.session_state['prev_resp'] = response
+        st.session_state['messages'].append({"role": "assistant", "content": response})
+        return(response+link)
+    # if ss[0][1] > 0.85:
+    #     product = grab_product(response)
+    # response += link
+    # if product != None:
+    #     response += "Here's a link to our relavant product:\n" + product
+    elif "Potential" in st.session_state['user_type']:
+        plink = grab_product(st.session_state['prev_resp']+"\nQ:"+query)
+        product = show_product(query,plink)
+        return(product)
+def show_product(query,product):
+    if product == None:
+        return None
+    prompt = f"""
+You are a bot that is programmed to answers customer questions on an ecommerce website and recommend their products.
+Q:{query}
+A:
+Include only the following link for your response -{product}"""
+    message = [{"role": "user", "content": prompt}]
     output = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a bot that tries to identify products from a paragraph."},
-            {"role": "user", "content": query},
-            {"role": "assistant", "content": "Only respond with the product"},
-            {"role": "assistant", "content": "If there isn't a product respond by saying \"None\""}
-        ],
-        temperature = 1.5
+        messages=message,
+    )
+    return(output['choices'][0]['message']['content'])
+def grab_product(resp):
+    # query = "List a potential baby care product from the paragraph below,\n"+resp
+    # output = openai.ChatCompletion.create(
+    #     model="gpt-3.5-turbo",
+    #     messages=[
+    #         {"role": "system", "content": "You are a bot that tries to identify a baby care product from the paragraph."},
+    #         {"role": "user", "content": query},
+    #         {"role": "assistant", "content": "Only respond with one baby care product name"},
+    #         {"role": "assistant", "content": "If there isn't a baby care product name respond by saying \"None\""}
+    #     ],
+    #     temperature = 1.5
+    # )
+    prompt = f"""
+Identify a huggies product from the paragraph and query below -
+{resp}
+
+Here are a list of huggies products -
+Fragrance-Free Wipes,
+Sensitive Skin Wipes,
+Extra Thick Wipes,
+pH Balanced Wipes,
+With Aloe & E Wipes,
+Scented Wipes,
+Nourishing Wipes,
+Hypoallergenic Wipes,
+Oat Extract Wipes.
+Huggies Special Delivery Diapers - designed for Skin Health,
+Huggies Little Snugglers Diapers - designed for Comfort for Delicate Skin,
+Huggies Little Movers Diapers - designed for comfort for Babies on the Move,
+Huggies Snug & Dry Diapers - designed for leakage protection,
+Huggies Overnites Diapers - designed for sleep
+
+Only respond with a single product name. If there are none or you are unsure say 'None'
+"""
+    model="gpt-3.5-turbo"
+    messages = [{"role": "user", "content": prompt}]
+    output = openai.ChatCompletion.create(
+        model=model,
+        messages=messages,
     )
     model_output = output['choices'][0]['message']['content']
-    model_output = re.sub(r'[^\w\s\n]+', '', model_output)
+    #model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
         return None
-    search = model_output + " huggies amazon"
+    search = model_output+"buy"
+    if "uggies" not in model_output:
+        search += " huggies amazon"
     print("search term:",search)
     url = 'https://www.google.com/search'
 
@@ -269,8 +329,10 @@ Your task is to classify a customer as Information-seeking or Potential-buyer or
 
 
 #"""SESSION VARIABLES"""
-if 'count' not in st.session_state:
-    st.session_state['count'] = 0
+if 'dcount' not in st.session_state:
+    st.session_state['dcount'] = 0
+if 'tcount' not in st.session_state:
+    st.session_state['tcount'] = 0
 if 'context' not in st.session_state:
     st.session_state['context'] = ""
 if 'messages' not in st.session_state:
@@ -281,8 +343,8 @@ if 'hist' not in st.session_state:
     st.session_state['hist'] = """"""
 if 'con_info' not in st.session_state:
     st.session_state['con_info'] = []
-# if 'user_type' not in st.session_state:
-#     st.session_state['user_type'] = ""
+if 'user_type' not in st.session_state:
+    st.session_state['user_type'] = ""
 if 'prev_resp' not in st.session_state:
     st.session_state['prev_resp'] = ""
 #"""END OF SESSION VARIABLES"""
@@ -310,7 +372,7 @@ st.markdown(
 st.sidebar.info('Please choose the model from the dropdown below.')
 st.set_option('deprecation.showfileUploaderEncoding', False)
 #add_selectbox = st.sidebar.selectbox("Which model would you like to use?", ("gpt-3.5-turbo", "text-davinci-003", "no context - davinci"))
-add_selectbox = st.sidebar.selectbox("", ("Customized GPT3", "Default GPT3","Customized ChatGPT (Experimental)"), on_change=clear_info())
+add_selectbox = st.sidebar.selectbox("", ("Customized GPT3", "Default GPT3","Customized ChatGPT (Experimental)"))#, on_change=clear_info)
 with st.sidebar:
         context_placeholder = st.empty()
         type_placeholder = st.empty()
@@ -334,6 +396,8 @@ if st.button("Ask The Bot"):
         output = handle_input(text1,add_selectbox)
         if output == "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below":
             st.warning(output)
+        elif output == None:
+            st.warning("Sorry couldn't find a suitable huggies product")
         else:
             st.success(output)
 if st.button("Clear context"):
