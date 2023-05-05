@@ -217,7 +217,8 @@ def turbo(query):
     #     response += "Here's a link to our relavant product:\n" + product
     elif "Potential" in st.session_state['user_type']:
         plink = grab_product(st.session_state['prev_resp']+"\nQ:"+query)
-        product = show_product(query,plink)
+        #product = show_product(query,plink)
+        product = f"Here's a link to one of our products - {plink}"
         return(product)
 def show_product(query,product):
     if product == None:
@@ -265,7 +266,7 @@ Huggies Little Movers Diapers - designed for comfort for Babies on the Move,
 Huggies Snug & Dry Diapers - designed for leakage protection,
 Huggies Overnites Diapers - designed for sleep
 
-Only respond with a single product name. If there are none or you are unsure say 'None'
+Only respond with a single product name. If there are none say 'None'
 """
     model="gpt-3.5-turbo"
     messages = [{"role": "user", "content": prompt}]
@@ -277,9 +278,9 @@ Only respond with a single product name. If there are none or you are unsure say
     #model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
         return None
-    search = model_output+"buy"
     if "uggies" not in model_output:
-        search += " huggies amazon"
+        model_output += " huggies"
+    search = model_output+" buy amazon"
     print("search term:",search)
     url = 'https://www.google.com/search'
 
@@ -297,10 +298,14 @@ Only respond with a single product name. If there are none or you are unsure say
     for link in search.findAll('a'):
         links.append(link.get('href'))
     amazon_links = re.findall(r'https://www\.amazon\.\S*(?=\')', str(links))
+    pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
+    
     if(len(amazon_links) == 0):
         return None
     else:
-        return(amazon_links[0])
+        for i in amazon_links:
+            if pattern.search(i):
+                return i
 def calculate_context(query):
     """Classify a customer as Information-seeking or Potential-buyer or Unsure based on the input query"""
     prompt =f"""
