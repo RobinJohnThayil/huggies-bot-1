@@ -278,7 +278,6 @@ Only respond with a single product name. If no product is mentioned then simply 
         messages=messages,
     )
     model_output = output['choices'][0]['message']['content']
-    st.write(f"model output: {model_output}")
     #model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
         return None
