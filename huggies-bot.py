@@ -287,10 +287,7 @@ Only respond with a single product name. If no product is mentioned then simply 
         st.write("in uggies")
         model_output = " huggies" + model_output
     model_output = model_output+" buy amazon"
-    st.write(f"model output: {model_output}")
-    search = model_output
-    print("search term:",search)
-    st.write(f"search term:{search}")
+    st.write(f"search term:{model_output}")
     url = 'https://www.google.com/search'
 
     headers = {
@@ -298,7 +295,7 @@ Only respond with a single product name. If no product is mentioned then simply 
 	    'Accept-Language': 'en-US,en;q=0.5',
 	    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82',
     }
-    parameters = {'q': search}
+    parameters = {'q': model_output}
 
     content = requests.get(url, headers = headers, params = parameters).text
     soup = BeautifulSoup(content, 'html.parser')
