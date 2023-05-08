@@ -300,10 +300,13 @@ Only respond with a single product name. If no product is mentioned then simply 
 
     content = requests.get(url, headers = headers, params = parameters).text
     soup = BeautifulSoup(content, 'html.parser')
-    search = soup.find(id = 'search')
+    #search = soup.find(id = 'search')
     links = []
-    for link in search.findAll('a'):
-        links.append(link.get('href'))
+    link_elements = soup.find_all('a', href=True)
+
+    for link_element in link_elements:
+        link = link_element['href']
+        links.append(link)
     amazon_links = re.findall(r'https://www\.amazon\.\S*(?=\')', str(links))
     pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
     
