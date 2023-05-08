@@ -281,8 +281,10 @@ Only respond with a single product name. If no product is mentioned then simply 
     st.write(f"model output: {model_output}")
     #model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
+        st.write("in none")
         return None
     if "uggies" not in model_output:
+        st.write("in uggies")
         model_output += " huggies"
     search = model_output+" buy amazon"
     print("search term:",search)
