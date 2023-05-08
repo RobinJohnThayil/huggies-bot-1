@@ -278,15 +278,17 @@ Only respond with a single product name. If no product is mentioned then simply 
         messages=messages,
     )
     model_output = output['choices'][0]['message']['content']
-    st.write(f"model output: {model_output}")
+    st.write(f"response: {model_output}")
     #model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
         st.write("in none")
         return None
     if "uggies" not in model_output:
         st.write("in uggies")
-        model_output += " huggies"
-    search = model_output+" buy amazon"
+        model_output = " huggies" + model_output
+    model_output = model_output+" buy amazon"
+    st.write(f"model output: {model_output}")
+    search = model_output
     print("search term:",search)
     st.write(f"search term:{search}")
     url = 'https://www.google.com/search'
