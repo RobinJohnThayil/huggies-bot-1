@@ -278,7 +278,7 @@ Only respond with a single product name. If no product is mentioned then simply 
         messages=messages,
     )
     model_output = output['choices'][0]['message']['content']
-    st.write(f"response: {model_output}")
+    st.write(f"model output: {model_output}")
     #model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
         st.write("in none")
@@ -286,8 +286,9 @@ Only respond with a single product name. If no product is mentioned then simply 
     if "uggies" not in model_output:
         st.write("in uggies")
         model_output = " huggies" + model_output
-    model_output = model_output+" buy amazon"
-    st.write(f"search term:{model_output}")
+    search = model_output+" buy amazon"
+    print("search term:",search)
+    st.write(f"search term: {search}")
     url = 'https://www.google.com/search'
 
     headers = {
@@ -295,7 +296,7 @@ Only respond with a single product name. If no product is mentioned then simply 
 	    'Accept-Language': 'en-US,en;q=0.5',
 	    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82',
     }
-    parameters = {'q': model_output}
+    parameters = {'q': search}
 
     content = requests.get(url, headers = headers, params = parameters).text
     soup = BeautifulSoup(content, 'html.parser')
@@ -307,6 +308,7 @@ Only respond with a single product name. If no product is mentioned then simply 
     pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
     
     if(len(amazon_links) == 0):
+        print("No links?")
         return None
     else:
         for i in amazon_links:
