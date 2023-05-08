@@ -281,14 +281,11 @@ Only respond with a single product name. If no product is mentioned then simply 
     st.write(f"model output: {model_output}")
     #model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
-        st.write("in none")
         return None
     if "uggies" not in model_output:
-        st.write("in uggies")
         model_output = " huggies" + model_output
-    search = model_output+" buy amazon"
+    search = model_output+"\"amazon.com\" -search"
     print("search term:",search)
-    st.write(f"search term: {search}")
     url = 'https://www.google.com/search'
 
     headers = {
@@ -300,14 +297,10 @@ Only respond with a single product name. If no product is mentioned then simply 
 
     content = requests.get(url, headers = headers, params = parameters).text
     soup = BeautifulSoup(content, 'html.parser')
-    #search = soup.find(id = 'search')
+    search = soup.find(id = 'search')
     links = []
-    link_elements = soup.find_all('a', href=True)
-
-    for link_element in link_elements:
-        link = link_element['href']
-        st.write(link)
-        links.append(link)
+    for link in search.findAll('a'):
+        links.append(link.get('href'))
     amazon_links = re.findall(r'https://www\.amazon\.\S*(?=\')', str(links))
     pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
     
