@@ -45,7 +45,7 @@ def calc_sim(query, contexts):
     query_embedding = get_embedding(query)
     sim_score = []
     for i in range(len(contexts.iloc[0:])):
-        sim_score.append((contexts.iloc[i][2],vector_similarity(query_embedding,contexts.iloc[i][3:])))
+        sim_score.append((contexts.iloc[i][2],vector_similarity(query_embedding,contexts.iloc[i][5:])))
     sim_score.sort(key=lambda x: x[1], reverse=True)
     return sim_score
 def num_tokens_from_string(string: str, encoding_name: str) -> int:
@@ -79,7 +79,7 @@ def handle_input(
     return message
 def change_context():
     if(len(st.session_state['con_info']) > 0):
-        context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com titled {st.session_state['con_info'][0]}, matched with a score of {round(st.session_state['con_info'][1]*100)}%")
+        context_placeholder.info(f"This response is being generated with the help of content taken from huggies.com:  \n{st.session_state['con_info'][0]},  \nmatched with a score of: {round(st.session_state['con_info'][1]*100)}%")
 def clear_info():
     #print("clear info", st.session_state['count'])
     if st.session_state['dcount'] > 0 or st.session_state['tcount'] > 0:
@@ -96,29 +96,39 @@ def clear_info():
         st.session_state['prev_resp'] = ""
 #models
 def davinciC(query):    
-    #query = How to feed my baby in the first year
     link = ''
     product = None
     e_token_length = num_tokens_from_string(query, "cl100k_base")
     if(e_token_length > 7000):
+        #checking if the token limit for embeddings model has been reached
         limit = "The prompt has exceeded the token limit set by Openai, please clear the context by pressing the button below"
         return(limit)
 
     if ("Information" in st.session_state['user_type']) or ("Unsure" in st.session_state['user_type']):
         ss = calc_sim(query, embeddings)
         if(st.session_state['dcount'] == 0 and ss[0][1]>0.85):
+            #pulling context
             st.session_state['context'] = embeddings[embeddings.values == ss[0][0]].iloc[0][0]
-            st.session_state['con_info'] = [ss[0][0],float(ss[0][1])]
+            #Displaying the matched context along with accuracy
+            # link = embeddings[embeddings.values == ss[0][0]].iloc[0][1]
+            # regex = r'\/([a-zA-Z\- ]+)(?=\/|$)'
+            # matches = re.findall(regex, link)[1:]
+            # matches.append(ss[0][0])
+            # result = ' -> '.join(matches)
+            result = f"Home -> Resources -> Newborn & Infants(0-12mo) -> {embeddings[embeddings.values == ss[0][0]].iloc[0][3]} -> {embeddings[embeddings.values == ss[0][0]].iloc[0][4]}"
+            st.session_state['con_info'] = [result,float(ss[0][1])]
             change_context()
+
             st.session_state['dcount'] += 1
             #print(st.session_state['context'])
         if ss[0][1] > 0.85:
-            link = "and also include the following link in the response:"+ embeddings[embeddings.values == ss[0][0]].iloc[0][1]
-        prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context {link}
+            link = f"and also include the following link in the response: \'{embeddings[embeddings.values == ss[0][0]].iloc[0][1]}\'"
+        prompt =f"""Answer the question in as many words and as truthfully as possible using the provided context delimited by triple backticks, {link}
 
 Context:
-{st.session_state['context']}
+```{st.session_state['context']}
 {st.session_state['hist']}
+```
 Q:{query}
 A:"""
         token_length = num_tokens_from_string(prompt, "p50k_base")
@@ -240,26 +250,26 @@ def grab_product(resp):
     #     temperature = 1.5
     # )
     prompt = f"""
-Identify a huggies product from the paragraph and query below -
-{resp}
+Given the following paragraph of text, delimited by triple backticks, identify a huggies product from the text below -
+Paragraph of text:```{resp}```
 
 Here are a list of huggies products -
-Fragrance-Free Wipes,
-Sensitive Skin Wipes,
-Extra Thick Wipes,
-pH Balanced Wipes,
-With Aloe & E Wipes,
-Scented Wipes,
-Nourishing Wipes,
-Hypoallergenic Wipes,
-Oat Extract Wipes.
-Huggies Special Delivery Diapers - designed for Skin Health,
-Huggies Little Snugglers Diapers - designed for Comfort for Delicate Skin,
-Huggies Little Movers Diapers - designed for comfort for Babies on the Move,
-Huggies Snug & Dry Diapers - designed for leakage protection,
-Huggies Overnites Diapers - designed for sleep
+1. Fragrance-Free Wipes,
+2. Sensitive Skin Wipes,
+3. Extra Thick Wipes,
+4. pH Balanced Wipes,
+5. With Aloe & E Wipes,
+6. Scented Wipes,
+7. Nourishing Wipes,
+8. Hypoallergenic Wipes,
+9. Oat Extract Wipes.
+10. Huggies Special Delivery Diapers - designed for Skin Health,
+11. Huggies Little Snugglers Diapers - designed for Comfort for Delicate Skin,
+12. Huggies Little Movers Diapers - designed for comfort for Babies on the Move,
+13. Huggies Snug & Dry Diapers - designed for leakage protection,
+14. Huggies Overnites Diapers - designed for sleep
 
-Only respond with a single product name. If there are none say 'None'
+Only respond with a single product name. If no product is mentioned then simply write \"None\"
 """
     model="gpt-3.5-turbo"
     messages = [{"role": "user", "content": prompt}]
