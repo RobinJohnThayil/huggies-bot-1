@@ -306,6 +306,7 @@ Only respond with a single product name. If no product is mentioned then simply 
 
     for link_element in link_elements:
         link = link_element['href']
+        st.write(link)
         links.append(link)
     amazon_links = re.findall(r'https://www\.amazon\.\S*(?=\')', str(links))
     pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
@@ -314,7 +315,6 @@ Only respond with a single product name. If no product is mentioned then simply 
         return None
     else:
         for i in amazon_links:
-            st.write(i)
             if pattern.search(i):
                 return i
 def calculate_context(query):
