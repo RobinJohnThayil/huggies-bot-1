@@ -308,7 +308,7 @@ Only respond with a single product name. If no product is mentioned then simply 
     pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
     
     if(len(amazon_links) == 0):
-        print("No links?")
+        st.write("No links?")
         return None
     else:
         for i in amazon_links:
