@@ -17,7 +17,8 @@ st.markdown("""---""")
 
 
 
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+#openai.api_key = st.secrets["OPENAI_API_KEY"]
+openai.api_key = "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"
 #loading the dataset to pull context from
 embeddings = pd.read_csv("embeddings_wl.csv")
 embeddings = embeddings.drop(embeddings.columns[0], axis=1)
@@ -285,6 +286,7 @@ Only respond with a single product name. If no product is mentioned then simply 
         model_output += " huggies"
     search = model_output+" buy amazon"
     print("search term:",search)
+    st.write(f"search term:{search}")
     url = 'https://www.google.com/search'
 
     headers = {
