@@ -313,7 +313,7 @@ Only respond with a single product name. If no product is mentioned then simply 
     #         if pattern.search(i):
     #             return i
 def grab_direct_amazon(search):
-    search_url = f"https://www.amazon.com/s?k={search}"
+    search_url = f"https://www.amazon.in/s?k={search}"
     headers = {
         'Accept' : '*/*',
         'Accept-Language': 'en-US,en;q=0.5',
@@ -333,7 +333,7 @@ def grab_direct_amazon(search):
     link_elements = soup.find_all('a', {'class': 'a-link-normal s-no-outline'})
     pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
     for link_element in link_elements:
-        link_url = "https://www.amazon.com" + link_element['href']
+        link_url = "https://www.amazon.in" + link_element['href']
         if pattern.search(link_url):
             return(link_url)
     return(None)
