@@ -313,48 +313,31 @@ Only respond with a single product name. If no product is mentioned then simply 
     #         if pattern.search(i):
     #             return i
 def grab_direct_amazon(search):
-    try:
-        search_url = f"https://www.amazon.com/s?k={search}"
-        headers = {
-            'Accept' : '*/*',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82',
-        }
+    search_url = f"https://www.amazon.com/s?k={search}"
+    url_tld = "https://www.amazon.com"
+    headers = {
+        'Accept' : '*/*',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82',
+    }
 
-        response = requests.get(search_url, headers=headers)
-        html_content = response.text
-        soup = BeautifulSoup(html_content, 'html.parser')
-
-        link_elements = soup.find_all('a', {'class': 'a-link-normal s-no-outline'})
-        pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
-        for link_element in link_elements:
-            link_url = "https://www.amazon.com" + link_element['href']
-            name = link_element.find('span', class_='a-size-base-plus a-color-base a-text-normal')
-            if pattern.search(link_url):
-                link = f"[{name.text if name is not None else link_url}]({link_url})"
-                return(link)
-        return(None)
-    except:
+    response = requests.get(search_url, headers=headers)
+    if response.status_code == 503:
         search_url = f"https://www.amazon.in/s?k={search}"
-        headers = {
-            'Accept' : '*/*',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82',
-        }
-
         response = requests.get(search_url, headers=headers)
-        html_content = response.text
-        soup = BeautifulSoup(html_content, 'html.parser')
+        url_tld = "https://www.amazon.in"
+    html_content = response.text
+    soup = BeautifulSoup(html_content, 'html.parser')
 
-        link_elements = soup.find_all('a', {'class': 'a-link-normal s-no-outline'})
-        pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
-        for link_element in link_elements:
-            link_url = "https://www.amazon.in" + link_element['href']
-            name = link_element.find('span', class_='a-size-base-plus a-color-base a-text-normal')
-            if pattern.search(link_url):
-                link = f"[{name.text if name is not None else link_url}]({link_url})"
-                return(link)
-        return(None)
+    link_elements = soup.find_all('a', {'class': 'a-link-normal s-no-outline'})
+    pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
+    for link_element in link_elements:
+        link_url = url_tld + link_element['href']
+        name = link_element.find('span', class_='a-size-base-plus a-color-base a-text-normal')
+        if pattern.search(link_url):
+            link = f"[{name.text if name is not None else link_url}]({link_url})"
+            return(link)
+    return(None)
 def calculate_context(query):
     """Classify a customer as Information-seeking or Potential-buyer or Unsure based on the input query"""
     prompt =f"""
