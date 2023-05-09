@@ -322,7 +322,7 @@ def grab_direct_amazon(search):
         }
 
         response = requests.get(search_url, headers=headers)
-
+        html_content = response.text
         soup = BeautifulSoup(html_content, 'html.parser')
 
         link_elements = soup.find_all('a', {'class': 'a-link-normal s-no-outline'})
@@ -343,7 +343,7 @@ def grab_direct_amazon(search):
         }
 
         response = requests.get(search_url, headers=headers)
-
+        html_content = response.text
         soup = BeautifulSoup(html_content, 'html.parser')
 
         link_elements = soup.find_all('a', {'class': 'a-link-normal s-no-outline'})
