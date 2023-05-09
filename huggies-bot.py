@@ -331,7 +331,7 @@ def grab_direct_amazon(search):
             link_url = "https://www.amazon.com" + link_element['href']
             name = link_element.find('span', class_='a-size-base-plus a-color-base a-text-normal')
             if pattern.search(link_url):
-                link = f"[{name.text} if name is not None else {link_url}}]({link_url})"
+                link = f"[{name.text if name is not None else link_url}]({link_url})"
                 return(link)
         return(None)
     except:
@@ -352,7 +352,7 @@ def grab_direct_amazon(search):
             link_url = "https://www.amazon.in" + link_element['href']
             name = link_element.find('span', class_='a-size-base-plus a-color-base a-text-normal')
             if pattern.search(link_url):
-                link = f"[{name.text} if name is not None else {link_url}}]({link_url})"
+                link = f"[{name.text if name is not None else link_url}]({link_url})"
                 return(link)
         return(None)
 def calculate_context(query):
