@@ -278,37 +278,65 @@ Only respond with a single product name. If no product is mentioned then simply 
         messages=messages,
     )
     model_output = output['choices'][0]['message']['content']
+    print(model_output)
     #model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
         return None
     if "uggies" not in model_output:
-        model_output = " huggies" + model_output
-    search = model_output+"\"amazon.com\" -search"
-    print("search term:",search)
-    url = 'https://www.google.com/search'
+        model_output = "huggies " + model_output
+    product = grab_direct_amazon(model_output)
+    return(product)
+    # search = model_output+"\"amazon.com\" -search"
+    # print("search term:",search)
+    # url = 'https://www.google.com/search'
 
-    headers = {
-	    'Accept' : '*/*',
-	    'Accept-Language': 'en-US,en;q=0.5',
-	    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82',
-    }
-    parameters = {'q': search}
+    # headers = {
+	#     'Accept' : '*/*',
+	#     'Accept-Language': 'en-US,en;q=0.5',
+	#     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82',
+    # }
+    # parameters = {'q': search}
 
-    content = requests.get(url, headers = headers, params = parameters).text
-    soup = BeautifulSoup(content, 'html.parser')
-    search = soup.find(id = 'search')
-    links = []
-    for link in search.findAll('a'):
-        links.append(link.get('href'))
-    amazon_links = re.findall(r'https://www\.amazon\.\S*(?=\')', str(links))
-    pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
+    # content = requests.get(url, headers = headers, params = parameters).text
+    # soup = BeautifulSoup(content, 'html.parser')
+    # search = soup.find(id = 'search')
+    # links = []
+    # for link in search.findAll('a'):
+    #     links.append(link.get('href'))
+    # amazon_links = re.findall(r'https://www\.amazon\.\S*(?=\')', str(links))
+    # pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
     
-    if(len(amazon_links) == 0):
-        return None
+    # if(len(amazon_links) == 0):
+    #     return None
+    # else:
+    #     for i in amazon_links:
+    #         if pattern.search(i):
+    #             return i
+def grab_direct_amazon(search):
+    search_url = f"https://www.amazon.com/s?k={search}"
+    headers = {
+        'Accept' : '*/*',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82',
+    }
+
+    response = requests.get(search_url, headers=headers)
+
+    if response.status_code == 200:
+        html_content = response.text
     else:
-        for i in amazon_links:
-            if pattern.search(i):
-                return i
+        st.warning(f"Error accessing amazon, error code: {response.status_code}")
+        return None
+
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    link_elements = soup.find_all('a', {'class': 'a-link-normal s-no-outline'})
+    pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
+    for link_element in link_elements:
+        link_url = "https://www.amazon.com" + link_element['href']
+        if pattern.search(link_url):
+            return(link_url)
+    return(None)
 def calculate_context(query):
     """Classify a customer as Information-seeking or Potential-buyer or Unsure based on the input query"""
     prompt =f"""
