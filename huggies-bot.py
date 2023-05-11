@@ -269,7 +269,7 @@ Here are a list of huggies products -
 13. Huggies Snug & Dry Diapers - designed for leakage protection,
 14. Huggies Overnites Diapers - designed for sleep
 
-Only respond with a single product name. If no product is mentioned then simply write \"None\"
+Only respond with a single product name. If you are confident that there is no product that can match the text then say \"None\"
 """
     model="gpt-3.5-turbo"
     messages = [{"role": "user", "content": prompt}]
