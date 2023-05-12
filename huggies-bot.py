@@ -21,6 +21,9 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 #loading the dataset to pull context from
 embeddings = pd.read_csv("embeddings_wl.csv")
 embeddings = embeddings.drop(embeddings.columns[0], axis=1)
+#product dataset
+pdf = pd.read_csv("embeddings_product.csv")
+pdf = pdf.drop(pdf.columns[0], axis=1)
 
 def get_embedding(text):
     result = openai.Embedding.create(
@@ -46,6 +49,16 @@ def calc_sim(query, contexts):
     sim_score = []
     for i in range(len(contexts.iloc[0:])):
         sim_score.append((contexts.iloc[i][2],vector_similarity(query_embedding,contexts.iloc[i][5:])))
+    sim_score.sort(key=lambda x: x[1], reverse=True)
+    return sim_score
+def calc_sim_product(query, contexts):
+    """
+    Temporary fix to match products with links using embeddings instead of web scraping.
+    """
+    query_embedding = get_embedding(query)
+    sim_score = []
+    for i in range(len(contexts.iloc[0:])):
+        sim_score.append((contexts.iloc[i][0],vector_similarity(query_embedding,contexts.iloc[i][2:])))
     sim_score.sort(key=lambda x: x[1], reverse=True)
     return sim_score
 def num_tokens_from_string(string: str, encoding_name: str) -> int:
@@ -257,17 +270,16 @@ Here are a list of huggies products -
 1. Fragrance-Free Wipes,
 2. Sensitive Skin Wipes,
 3. Extra Thick Wipes,
-4. pH Balanced Wipes,
-5. With Aloe & E Wipes,
-6. Scented Wipes,
-7. Nourishing Wipes,
-8. Hypoallergenic Wipes,
-9. Oat Extract Wipes.
-10. Huggies Special Delivery Diapers - designed for Skin Health,
-11. Huggies Little Snugglers Diapers - designed for Comfort for Delicate Skin,
-12. Huggies Little Movers Diapers - designed for comfort for Babies on the Move,
-13. Huggies Snug & Dry Diapers - designed for leakage protection,
-14. Huggies Overnites Diapers - designed for sleep
+4. With Aloe & E Wipes,
+5. Scented Wipes,
+6. Nourishing Wipes,
+7. Hypoallergenic Wipes,
+8. Oat Extract Wipes.
+9. Huggies Special Delivery Diapers - designed for Skin Health,
+10. Huggies Little Snugglers Diapers - designed for Comfort for Delicate Skin,
+11. Huggies Little Movers Diapers - designed for comfort for Babies on the Move,
+12. Huggies Snug & Dry Diapers - designed for leakage protection,
+13. Huggies Overnites Diapers - designed for sleep
 
 Only respond with a single product name. If you are confident that there is no product that can match the text then say \"None\"
 """
@@ -282,9 +294,12 @@ Only respond with a single product name. If you are confident that there is no p
     #model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
         return None
-    if "uggies" not in model_output:
-        model_output = "huggies " + model_output
-    product = grab_direct_amazon(model_output)
+    product = grab_embeddings_product(model_output)
+    # if "None" in model_output:
+    #     return None
+    # if "uggies" not in model_output:
+    #     model_output = "huggies " + model_output
+    # product = grab_direct_amazon(model_output)
     return(product)
     # search = model_output+"\"amazon.com\" -search"
     # print("search term:",search)
@@ -340,6 +355,13 @@ def grab_direct_amazon(search):
             link = f"[{name.text if name is not None else link_url}]({link_url})"
             return(link)
     return(None)
+def grab_embeddings_product(query):
+    ss = calc_sim_product(query, pdf)
+    if(ss[0][1] > 0.85):
+        pname = ss[0][0]
+        plink = pdf[pdf.values == ss[0][0]].iloc[0][1]
+        return(f"[{pname}]({plink})")
+    return None
 def calculate_context(query):
     """Classify a customer as Information-seeking or Potential-buyer or Unsure based on the input query"""
     prompt =f"""
