@@ -274,7 +274,7 @@ Here are a list of huggies products -
 5. Scented Wipes,
 6. Nourishing Wipes,
 7. Hypoallergenic Wipes,
-8. Oat Extract Wipes.
+8. Oat Extract Wipes,
 9. Huggies Special Delivery Diapers - designed for Skin Health,
 10. Huggies Little Snugglers Diapers - designed for Comfort for Delicate Skin,
 11. Huggies Little Movers Diapers - designed for comfort for Babies on the Move,
@@ -290,7 +290,6 @@ Only respond with a single product name. If you are confident that there is no p
         messages=messages,
     )
     model_output = output['choices'][0]['message']['content']
-    st.write(model_output)
     #model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
         return None
