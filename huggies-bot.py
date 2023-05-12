@@ -152,7 +152,7 @@ A:"""
         return(resp)
 
     elif "Potential" in st.session_state['user_type']:
-        plink = grab_product(st.session_state['prev_resp']+"\nQ:"+query)
+        plink = grab_product(st.session_state['prev_resp']+"\nQ: "+query)
         if plink == None:
             return(None)
         else:
