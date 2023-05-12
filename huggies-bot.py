@@ -250,8 +250,8 @@ def grab_product(resp):
     #     temperature = 1.5
     # )
     prompt = f"""
-Given the following paragraph of text, delimited by triple backticks, identify a huggies product from the text below -
-Paragraph of text:```{resp}```
+Identify a huggies product from the text below, delimited by triple backticks -
+```{resp}```
 
 Here are a list of huggies products -
 1. Fragrance-Free Wipes,
@@ -329,9 +329,11 @@ def grab_direct_amazon(search):
     html_content = response.text
     soup = BeautifulSoup(html_content, 'html.parser')
 
-    link_elements = soup.find_all('a', {'class': 'a-link-normal s-no-outline'})
+    link_elements = soup.find_all('a', {'class': 'a-link-normal s-underline-text s-underline-link-text s-link-style a-text-normal'})
     pattern = re.compile(r'\b\w*[Hh][Uu][Gg][Gg][Ii][Ee][Ss].*dp\w*\b')
     for link_element in link_elements:
+        if 'spons' in link_element.get('href', ''):
+            continue
         link_url = url_tld + link_element['href']
         name = link_element.find('span', class_='a-size-base-plus a-color-base a-text-normal')
         if pattern.search(link_url):
