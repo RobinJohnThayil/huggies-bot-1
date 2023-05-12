@@ -290,7 +290,7 @@ Only respond with a single product name. If you are confident that there is no p
         messages=messages,
     )
     model_output = output['choices'][0]['message']['content']
-    print(model_output)
+    st.write(model_output)
     #model_output = re.sub(r'[^\w\s\n]+', '', model_output)
     if "None" in model_output:
         return None
