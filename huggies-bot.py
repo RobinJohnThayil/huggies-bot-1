@@ -1,4 +1,5 @@
-#version: babybot+convo_hist+links+product_links+matched_content_score+context_aware
+#version: babybot+convo_hist+links+product_links+matched_content_score+context_aware+loyalty
+debug = False
 from bs4 import BeautifulSoup
 import requests
 import streamlit as st
@@ -8,7 +9,7 @@ import openai
 import re
 from PIL import Image
 import tiktoken
-from time import sleep
+import os
 image = Image.open('fotor_2023-3-9_15_18_29.png')
 st.image(image, width = 180)
 st.title("Baby Bot")
@@ -16,8 +17,12 @@ st.title("Baby Bot")
 st.markdown("""---""")
 
 
-
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+if(debug):
+    file_path = os.path.join(os.path.dirname(os.getcwd()),'key.txt')
+    with open(file_path, 'r') as file:
+        openai.api_key = file.read()
+else:
+    openai.api_key = st.secrets["OPENAI_API_KEY"]
 #loading the dataset to pull context from
 embeddings = pd.read_csv("embeddings_wl.csv")
 embeddings = embeddings.drop(embeddings.columns[0], axis=1)
@@ -171,6 +176,8 @@ A:"""
         else:
             product = f"Here's a link to one of our products - {plink}"
             return(product)
+    elif "Loyal" in st.session_state['user_type']:
+        return(show_product(query))
 def davinciNC(query):
     base_model = "text-davinci-003"
     completion = openai.Completion.create(
@@ -236,18 +243,18 @@ def turbo(query):
         else:
             product = f"Here's a link to one of our products - {plink}"
             return(product)
-def show_product(query,product):
-    if product == None:
-        return None
-    prompt = f"""
-You are a bot that is programmed to answers customer questions on an ecommerce website and recommend their products.
+    elif "Loyal" in st.session_state['user_type']:
+        return(show_product(query))
+def show_product(query):
+    prompt = f"""You are an AI assistant that belongs to a certain e-commerce website that sells a wide range of diapers and baby wipes. \
+Your goal is to try and convince the customer to buy one of our products.
 Q:{query}
-A:
-Include only the following link for your response -{product}"""
+A:"""
     message = [{"role": "user", "content": prompt}]
     output = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=message,
+        temperature = 0.2,
     )
     return(output['choices'][0]['message']['content'])
 def grab_product(resp):
@@ -363,20 +370,21 @@ def grab_embeddings_product(query):
     return None
 def calculate_context(query):
     """Classify a customer as Information-seeking or Potential-buyer or Unsure based on the input query"""
-    prompt =f"""
+    prompt = f"""
 You are a bot that answers customer questions on an ecommerce website.
 A customer visting the website will be in one of the below states:
 1. Information-seeking: if the customer is just trying to gather information but has no intention to buy the product
 2. Potential-buyer: if the customer is interested in buying the product soon.
-3. Unsure: if you are unable to estimate the state
+3. Loyalty-customer: if the customer has already purchased our products before and is impressed/happy with them.
+4. Unsure: if you are unable to estimate the state
 
 
-Here are some comma-separated examples for two categories:
+Here are some comma-separated examples for the three categories:
 1. Information-seeking: "I have ... condition. Can you help?", "I need information around ..."
 2. Potential-buyer: "What product would you recommend?", "Do you sell ...?", "Any products ..."
-
-Your task is to classify a customer as Information-seeking or Potential-buyer or Unsure based on this input:
-{query}. Provide only classification as answer
+3. Loyalty-customer: "I bought your product before and loved it!", "I'm a returning customer and looking for more options.", "I've been using your ..."
+Your task is to classify a customer as Information-seeking or Potential-buyer or Loyalty customer or Unsure based on this input:
+`{query}`. Provide only classification as answer
 """
     model="gpt-3.5-turbo"
     messages = [{"role": "user", "content": prompt}]
