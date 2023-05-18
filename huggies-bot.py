@@ -247,7 +247,7 @@ def turbo(query):
         return(show_product(query))
 def show_product(query):
     prompt = f"""You are an AI assistant that belongs to a certain e-commerce website that sells a wide range of diapers and baby wipes. \
-Answer the following question with the goal of convincing the customer to buy one of our products. Also direct them to the follwing link - 'https://www.huggies.com/en-us/offers-and-rewards/sweepstakes' for a chance to win free diapers.
+Answer the following question with the goal of leaving a positive message around the Huggies brand. Also direct them to the following link - 'https://www.huggies.com/en-us/offers-and-rewards/sweepstakes' for a chance to win free diapers.
 Q:{query}
 A:"""
     message = [{"role": "user", "content": prompt}]
