@@ -375,14 +375,14 @@ You are a bot that answers customer questions on an ecommerce website.
 A customer visting the website will be in one of the below states:
 1. Information-seeking: if the customer is just trying to gather information but has no intention to buy the product
 2. Potential-buyer: if the customer is interested in buying the product soon.
-3. Loyalty-customer: if the customer has already purchased our products before and is impressed/happy with them.
+3. Loyal-customer: if the customer has already purchased our products before and is impressed/happy with them.
 4. Unsure: if you are unable to estimate the state
 
 
 Here are some comma-separated examples for the three categories:
 1. Information-seeking: "I have ... condition. Can you help?", "I need information around ..."
 2. Potential-buyer: "What product would you recommend?", "Do you sell ...?", "Any products ..."
-3. Loyalty-customer: "I bought your product before and loved it!", "I'm a returning customer and looking for more options.", "I've been using your ..."
+3. Loyal-customer: "I bought your product before and loved it!", "I'm a returning customer and looking for more options.", "I've been using your ..."
 Your task is to classify a customer as Information-seeking or Potential-buyer or Loyalty customer or Unsure based on this input:
 `{query}`. Provide only classification as answer
 """
