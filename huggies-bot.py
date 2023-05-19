@@ -80,9 +80,12 @@ def handle_input(
 
     st.session_state['user_type'] = calculate_context(input_str)
     if("Information" in st.session_state['user_type']) or ("Unsure" in st.session_state['user_type']):
+        prompt = f"""```\n{st.session_state['hist']}Q: {input_str} ```
+Identify whether the above conversation is related to baby healthcare. Respond with either a yes or a no.
+        """
         completion = openai.Completion.create(
             model = "text-davinci-003",
-            prompt = f"Identify whether the question below is related to healthcare and/or baby care in general. If no reply by saying 'No'.\nQ: {input_str}",
+            prompt = prompt,
             max_tokens = 1024,
             temperature = 0.25,
         )
