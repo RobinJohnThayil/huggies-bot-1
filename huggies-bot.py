@@ -1,4 +1,4 @@
-#version: babybot+convo_hist+links+product_links+matched_content_score+context_aware+loyalty
+#version: babybot+convo_hist+links+product_links+matched_content_score+context_aware+loyalty+context_check
 debug = False
 from bs4 import BeautifulSoup
 import requests
@@ -76,7 +76,20 @@ def handle_input(
     model : str
                  ):
     """Tries to classify the type of user and generates a response using one the models """
+
+
     st.session_state['user_type'] = calculate_context(input_str)
+    if("Information" in st.session_state['user_type']):
+        completion = openai.Completion.create(
+            model = "text-davinci-003",
+            prompt = f"Identify whether the question below is related to healthcare and/or baby care in general. If no reply by saying 'No'.\nQ: {input_str}",
+            max_tokens = 1024,
+            temperature = 0.25,
+        )
+        resp = completion.choices[0].text
+        if("No" in resp):
+            st.warning("Please stick to the context of baby healthcare")
+            return("")
     type_placeholder.info(f"The current user state is: {st.session_state['user_type']}")
     if(model == 'Customized GPT3'):
         if st.session_state['tcount'] > 0:
@@ -466,7 +479,7 @@ if st.button("Ask The Bot"):
             st.warning(output)
         elif output == None:
             st.warning("Sorry couldn't find a suitable huggies product")
-        else:
+        elif output != "":
             st.success(output)
 if st.button("Clear context"):
     clear_info()
