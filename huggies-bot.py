@@ -79,7 +79,7 @@ def handle_input(
 
 
     st.session_state['user_type'] = calculate_context(input_str)
-    if("Information" in st.session_state['user_type']):
+    if("Information" in st.session_state['user_type']) or ("Unsure" in st.session_state['user_type']):
         completion = openai.Completion.create(
             model = "text-davinci-003",
             prompt = f"Identify whether the question below is related to healthcare and/or baby care in general. If no reply by saying 'No'.\nQ: {input_str}",
